@@ -63,7 +63,7 @@ func (c *MSDevOpsClient) Sync(cfg config.Config) error {
 
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
-	gitSync.SyncReposWithConcurrency(cfg, repos, func(repo git.GitRepository) {
+	gitSync.SyncWithConcurrency(cfg, repos, func(repo git.GitRepository) {
 		repoOwner := derefString(repo.Project.Name)
 		repoName := derefString(repo.Name)
 		repoURL := derefString(repo.WebUrl)
@@ -79,7 +79,7 @@ func (c *MSDevOpsClient) Sync(cfg config.Config) error {
 		}
 
 	})
-	gitSync.LogSyncSummary()
+	gitSync.LogSyncSummary(&cfg)
 	return nil
 }
 
