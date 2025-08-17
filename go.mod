@@ -6,6 +6,7 @@ require (
 	codeberg.org/mvdkleijn/forgejo-sdk/forgejo v1.2.0
 	github.com/google/go-github/v74 v74.0.0
 	github.com/ktrysmt/go-bitbucket v0.9.86
+	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
@@ -21,13 +22,11 @@ require (
 	github.com/go-fed/httpsig v1.1.0 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
-	github.com/google/uuid v1.4.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/hashicorp/go-version v1.7.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/magiconair/properties v1.8.7 // indirect
-	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
