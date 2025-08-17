@@ -30,7 +30,6 @@ func (c *MSDevOpsClient) GetTokenManager() *token.Manager {
 
 // createClient initializes and returns a new Azure DevOps Git client using the provided token manager and server configuration.
 func (c *MSDevOpsClient) createClient() (git.Client, error) {
-
 	organizationURL := fmt.Sprintf("%s://%s", c.serverConfig.Protocol, c.serverConfig.Domain)
 	logger.Debugf("organizationURL: %s", organizationURL)
 	ctx := context.Background()
@@ -91,9 +90,7 @@ func (c *MSDevOpsClient) getUserRepos(cfg config.Config) ([]git.GitRepository, e
 	}
 
 	ctx := context.Background()
-	allRepos, err := client.GetRepositories(ctx, git.GetRepositoriesArgs{
-		Project: &cfg.Workspace,
-	})
+	allRepos, err := client.GetRepositories(ctx, git.GetRepositoriesArgs{})
 
 	if err != nil {
 		return nil, err
