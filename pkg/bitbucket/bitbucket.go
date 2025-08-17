@@ -37,14 +37,14 @@ func (c *BitbucketClient) Sync(cfg config.Config) error {
 
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
-	gitSync.SyncReposWithConcurrency(cfg, repos, func(repo *bb.Repository) {
+	gitSync.SyncWithConcurrency(cfg, repos, func(repo *bb.Repository) {
 		gitSync.CloneOrUpdateRepo(cfg.Workspace, repo.Name, cfg)
 		if cfg.IncludeWiki && repo.Has_wiki {
 			gitSync.SyncWiki(cfg.Workspace, repo.Name, cfg)
 		}
 	})
 
-	gitSync.LogSyncSummary()
+	gitSync.LogSyncSummary(&cfg)
 	return nil
 }
 

@@ -7,8 +7,7 @@
     <a target="_blank" href="https://github.com/AkashRajpurohit/git-sync/actions"><img src="https://github.com/AkashRajpurohit/git-sync/actions/workflows/release.yml/badge.svg?event=push" /></a>
     <a href="https://goreportcard.com/report/github.com/AkashRajpurohit/git-sync"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/AkashRajpurohit/git-sync">
     <a target="_blank" href="https://github.com/AkashRajpurohit/git-sync/releases"><img src="https://img.shields.io/github/downloads/AkashRajpurohit/git-sync/total" /></a>
-    <a target="_blank" href="https://github.com/AkashRajpurohit/git-sync/pkgs/container/git-sync"><img src="https://img.shields.io/badge/dynamic/json?url=https://ipitio.github.io/backage/AkashRajpurohit/git-sync/git-sync.json&query=%24.downloads&logo=github&style=flat&color=066da5&label=Docker pulls" /></a>
-    <img alt="Visitors count" src="https://visitor-badge.laobi.icu/badge?page_id=@akashrajpurohit~git-sync.visitor-badge&style=flat-square">
+    <img alt="Visitors" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fvc.akashrajpurohit.com%2Fc%2Fakash~git-sync&query=count&style=flat&logo=github&label=Visitors&color=066da5">
     <a target="_blank" href="https://github.com/AkashRajpurohit/git-sync/releases"><img src="https://img.shields.io/github/go-mod/go-version/AkashRajpurohit/git-sync?filename=go.mod" /></a>
     <a target="_blank" href="https://ko-fi.com/akashrajpurohit"><img src="https://img.shields.io/badge/Ko--fi-F16061?style=flat-square&logo=ko-fi&logoColor=white" /></a>
     <a target="_blank" href="https://akashrajpurohit.com/sponsors/?ref=git-sync"><img src="https://img.shields.io/badge/Sponsor-AkashRajpurohit-F16061?style=flat-square&logoColor=white" /></a>
@@ -31,7 +30,7 @@
 
 ## 📺 Demo
 
-[![asciicast](./assets/asciinema.svg)](https://asciinema.org/a/674282)
+[![asciicast](./assets/asciinema.svg)](https://asciinema.org/a/716502)
 
 ## 🤔 Why `git-sync`?
 
@@ -50,6 +49,7 @@ Recently I have seen many developers [getting their GitHub account banned](https
 - **Configuration File:** Easily manage your settings through a YAML configuration file.
 - **Custom Backup Directory:** Specify the directory where you want to store your repositories.
 - **Multi Platform:** Currently this project supports backing up repositories from all major Git hosting services like GitHub, GitLab, Bitbucket, Gitea and Forgejo.
+- **Notifications:** Get notified when your sync is complete, or if there are any errors.
 
 ## 🚀 Getting Started
 
@@ -58,6 +58,8 @@ We have a thorough guide on how to set up and get started with `git-sync` in our
 ## 🙏🏻 Support
 
 If you found the project helpful, consider giving it a star ⭐️. If you would like to support the project in other ways, you can [buy me a coffee](https://ko-fi.com/akashrajpurohit) or [sponsor me on GitHub](https://github.com/sponsors/AkashRajpurohit).
+
+<a href="https://eternalvault.app/?ref=git-sync"><img src="./assets/sponsor-banner.png" alt="Eternal Vault" width="100%" /></a>
 
 ## 🐛 Bugs or Requests
 
@@ -78,6 +80,9 @@ If you encounter any problems feel free to open an [issue](https://github.com/Ak
       <td align="center" valign="top" width="14.28%"><a href="https://janusworx.com"><img src="https://avatars.githubusercontent.com/u/4888781?v=4?s=100" width="100px;" alt="Mario Jason Braganza"/><br /><sub><b>Mario Jason Braganza</b></sub></a><br /><a href="#bug-jasonbraganza" title="Bug reports">🐛</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://blog.singee.me"><img src="https://avatars.githubusercontent.com/u/11208082?v=4?s=100" width="100px;" alt="Bryan"/><br /><sub><b>Bryan</b></sub></a><br /><a href="#ideas-ImSingee" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/3timeslazy"><img src="https://avatars.githubusercontent.com/u/23486601?v=4?s=100" width="100px;" alt="Vladimir Fetisov"/><br /><sub><b>Vladimir Fetisov</b></sub></a><br /><a href="#ideas-3timeslazy" title="Ideas, Planning, & Feedback">🤔</a> <a href="#bug-3timeslazy" title="Bug reports">🐛</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.peterdavehello.org/"><img src="https://avatars.githubusercontent.com/u/3691490?v=4?s=100" width="100px;" alt="Peter Dave Hello"/><br /><sub><b>Peter Dave Hello</b></sub></a><br /><a href="#platform-PeterDaveHello" title="Packaging/porting to new platform">📦</a></td>
     </tr>
   </tbody>
 </table>

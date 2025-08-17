@@ -8,7 +8,7 @@ import (
 	"github.com/AkashRajpurohit/git-sync/pkg/logger"
 	gitSync "github.com/AkashRajpurohit/git-sync/pkg/sync"
 	"github.com/AkashRajpurohit/git-sync/pkg/token"
-	gh "github.com/google/go-github/v68/github"
+	gh "github.com/google/go-github/v74/github"
 	"golang.org/x/oauth2"
 )
 
@@ -43,14 +43,14 @@ func (c *GitHubClient) Sync(cfg config.Config) error {
 
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
-	gitSync.SyncReposWithConcurrency(cfg, repos, func(repo *gh.Repository) {
+	gitSync.SyncWithConcurrency(cfg, repos, func(repo *gh.Repository) {
 		gitSync.CloneOrUpdateRepo(repo.GetOwner().GetLogin(), repo.GetName(), cfg)
 		if cfg.IncludeWiki && repo.GetHasWiki() {
 			gitSync.SyncWiki(repo.GetOwner().GetLogin(), repo.GetName(), cfg)
 		}
 	})
 
-	gitSync.LogSyncSummary()
+	gitSync.LogSyncSummary(&cfg)
 	return nil
 }
 
