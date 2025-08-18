@@ -125,8 +125,13 @@ func (c *MSDevOpsClient) Sync(cfg config.Config) error {
 	gitSync.SyncWithConcurrency(cfg, repos, func(repo git.GitRepository) {
 		repoOwner := derefString(repo.Project.Name)
 		repoName := derefString(repo.Name)
+		repoURL := derefString(repo.WebUrl)
+		protoLen := len(cfg.Server.Protocol + "://")
 
-		gitSync.CloneOrUpdateRepo(repoOwner, repoName, cfg)
+		// Need to manually construct the repo URL by inserting the user token into the URL
+		repoAuthURL := repoURL[:protoLen] + c.tokenManager.GetNextToken() + "@" + repoURL[protoLen:]
+
+		gitSync.CloneOrUpdateRawRepo(repoOwner, repoName, repoAuthURL, cfg)
 
 		// Check if wiki synchronization is enabled
 		if cfg.IncludeWiki {
@@ -249,60 +254,63 @@ func (c *MSDevOpsClient) getUserRepos(ctx context.Context, client git.Client, cf
 
 // syncWiki synchronizes the wiki for a repository if it exists.
 func (c *MSDevOpsClient) syncWiki(repo git.GitRepository, cfg config.Config) {
-	ctx := context.Background()
+	/*
+		ctx := context.Background()
 
-	// Create a wiki client for wiki operations
-	client, err := c.createWikiClient(ctx)
-	if err != nil {
-		logger.Errorf("Failed to create Azure DevOps wiki client for wiki sync: %v", err)
-		return
-	}
+		// Create a wiki client for wiki operations
+		client, err := c.createWikiClient(ctx)
+		if err != nil {
+			logger.Errorf("Failed to create Azure DevOps wiki client for wiki sync: %v", err)
+			return
+		}
 
-	repoOwner := derefString(repo.Project.Name)
-	repoName := derefString(repo.Name)
+		repoOwner := derefString(repo.Project.Name)
+		repoName := derefString(repo.Name)
 
-	// Get wiki information
-	wikis, err := client.GetAllWikis(ctx, wiki.GetAllWikisArgs{
-		Project: repo.Project.Name,
-	})
-	if err != nil {
-		logger.Debugf("Failed to get wikis for repository %s/%s: %v", repoOwner, repoName, err)
-		return
-	}
+		// Get wiki information
+		wikis, err := client.GetAllWikis(ctx, wiki.GetAllWikisArgs{
+			Project: repo.Project.Name,
+		})
+		if err != nil {
+			logger.Debugf("Failed to get wikis for repository %s/%s: %v", repoOwner, repoName, err)
+			return
+		}
 
-	if wikis == nil || len(*wikis) == 0 {
-		logger.Debugf("No wikis found for repository %s/%s", repoOwner, repoName)
-		return
-	}
+		if wikis == nil || len(*wikis) == 0 {
+			logger.Debugf("No wikis found for repository %s/%s", repoOwner, repoName)
+			return
+		}
 
-	// Use the first wiki (Azure DevOps typically has one wiki per repository)
-	wikiObj := (*wikis)[0]
+		// Use the first wiki (Azure DevOps typically has one wiki per repository)
+		wikiObj := (*wikis)[0]
 
-	// Get the remote URL directly from the wiki object
-	wikiURL := derefString(wikiObj.RemoteUrl)
-	if wikiURL == "" {
-		logger.Warnf("Wiki URL is empty for repository %s/%s", repoOwner, repoName)
-		return
-	}
+		// Get the remote URL directly from the wiki object
+		wikiURL := derefString(wikiObj.RemoteUrl)
+		if wikiURL == "" {
+			logger.Warnf("Wiki URL is empty for repository %s/%s", repoOwner, repoName)
+			return
+		}
 
-	// Construct authenticated URL
-	protoLen := len(cfg.Server.Protocol + "://")
-	if protoLen >= len(wikiURL) {
-		logger.Errorf("Invalid wiki URL format: %s", wikiURL)
-		return
-	}
+		// Construct authenticated URL
+		protoLen := len(cfg.Server.Protocol + "://")
+		if protoLen >= len(wikiURL) {
+			logger.Errorf("Invalid wiki URL format: %s", wikiURL)
+			return
+		}
 
-	token := c.tokenManager.GetNextToken()
-	if token == "" {
-		logger.Errorf("No valid token available for wiki %s/%s", repoOwner, repoName)
-		return
-	}
+		token := c.tokenManager.GetNextToken()
+		if token == "" {
+			logger.Errorf("No valid token available for wiki %s/%s", repoOwner, repoName)
+			return
+		}
 
-	// Construct authenticated URL safely
-	wikiAuthURL := wikiURL[:protoLen] + token + "@" + wikiURL[protoLen:]
+		// Construct authenticated URL safely
+		wikiAuthURL := wikiURL[:protoLen] + token + "@" + wikiURL[protoLen:]
 
-	logger.Info("Syncing wiki for repo: ", repoName)
-	gitSync.CloneOrUpdateRawRepo(repoOwner, repoName+".wiki", wikiAuthURL, cfg)
+		logger.Info("Syncing wiki for repo: ", repoName)
+		gitSync.CloneOrUpdateRawRepo(repoOwner, repoName+".wiki", wikiAuthURL, cfg)
+	*/
+	return
 }
 
 /*
