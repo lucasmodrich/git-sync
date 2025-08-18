@@ -151,7 +151,7 @@ func (c *MSDevOpsClient) getRepos(cfg config.Config) ([]git.GitRepository, error
 	// Get all repositories with retry logic for token rotation
 	var allRepos []git.GitRepository
 	for {
-		repos, err := c.getUserRepos(ctx, client)
+		repos, err := c.getUserRepos(ctx, client, cfg)
 		if err != nil {
 			logger.Debugf("Error with current token, trying next token: %v", err)
 			// Create a new client with the next token
@@ -232,8 +232,10 @@ func (c *MSDevOpsClient) getRepos(cfg config.Config) ([]git.GitRepository, error
 }
 
 // getUserRepos fetches all accessible repositories for the authenticated user.
-func (c *MSDevOpsClient) getUserRepos(ctx context.Context, client git.Client) ([]git.GitRepository, error) {
-	allRepos, err := client.GetRepositories(ctx, git.GetRepositoriesArgs{})
+func (c *MSDevOpsClient) getUserRepos(ctx context.Context, client git.Client, cfg config.Config) ([]git.GitRepository, error) {
+	allRepos, err := client.GetRepositories(ctx, git.GetRepositoriesArgs{
+		Project: &cfg.Workspace, // Use the workspace from the config
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch repositories: %w", err)
 	}
@@ -303,6 +305,7 @@ func (c *MSDevOpsClient) syncWiki(repo git.GitRepository, cfg config.Config) {
 	gitSync.CloneOrUpdateRawRepo(repoOwner, repoName+".wiki", wikiAuthURL, cfg)
 }
 
+/*
 // createAuthenticatedURL constructs an authenticated URL for Git operations.
 func (c *MSDevOpsClient) createAuthenticatedURL(baseURL string, cfg config.Config) string {
 	protoLen := len(cfg.Server.Protocol + "://")
@@ -326,3 +329,4 @@ func (c *MSDevOpsClient) createAuthenticatedURL(baseURL string, cfg config.Confi
 	// Add authentication to URL
 	return baseURL[:protoLen] + token + "@" + baseURL[protoLen:]
 }
+*/
