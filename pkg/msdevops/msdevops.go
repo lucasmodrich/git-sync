@@ -14,7 +14,6 @@ import (
 	"github.com/AkashRajpurohit/git-sync/pkg/token"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
-	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/wiki"
 )
 
 // MSDevOpsClient implements the Azure DevOps platform client for repository synchronization.
@@ -90,6 +89,7 @@ func (c *MSDevOpsClient) createClient(ctx context.Context) (git.Client, error) {
 	return client, nil
 }
 
+/*
 // createWikiClient initializes and returns a new Azure DevOps Wiki client using the provided token manager and server configuration.
 func (c *MSDevOpsClient) createWikiClient(ctx context.Context) (wiki.Client, error) {
 	connection, err := c.createConnection()
@@ -104,6 +104,7 @@ func (c *MSDevOpsClient) createWikiClient(ctx context.Context) (wiki.Client, err
 
 	return client, nil
 }
+*/
 
 // derefString returns the value of a string pointer or an empty string if the pointer is nil.
 func derefString(ref *string) string {
@@ -132,11 +133,12 @@ func (c *MSDevOpsClient) Sync(cfg config.Config) error {
 		repoAuthURL := repoURL[:protoLen] + c.tokenManager.GetNextToken() + "@" + repoURL[protoLen:]
 
 		gitSync.CloneOrUpdateRawRepo(repoOwner, repoName, repoAuthURL, cfg)
-
-		// Check if wiki synchronization is enabled
-		if cfg.IncludeWiki {
-			c.syncWiki(repo, cfg)
-		}
+		/*
+			// Check if wiki synchronization is enabled
+			if cfg.IncludeWiki {
+				c.syncWiki(repo, cfg)
+			}
+		*/
 	})
 
 	gitSync.LogSyncSummary(&cfg)
@@ -252,9 +254,10 @@ func (c *MSDevOpsClient) getUserRepos(ctx context.Context, client git.Client, cf
 	return *allRepos, nil
 }
 
+/*
 // syncWiki synchronizes the wiki for a repository if it exists.
 func (c *MSDevOpsClient) syncWiki(repo git.GitRepository, cfg config.Config) {
-	/*
+
 		ctx := context.Background()
 
 		// Create a wiki client for wiki operations
@@ -309,9 +312,8 @@ func (c *MSDevOpsClient) syncWiki(repo git.GitRepository, cfg config.Config) {
 
 		logger.Info("Syncing wiki for repo: ", repoName)
 		gitSync.CloneOrUpdateRawRepo(repoOwner, repoName+".wiki", wikiAuthURL, cfg)
-	*/
-	return
 }
+*/
 
 /*
 // createAuthenticatedURL constructs an authenticated URL for Git operations.
