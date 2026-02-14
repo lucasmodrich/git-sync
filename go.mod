@@ -4,7 +4,7 @@ go 1.24.5
 
 require (
 	codeberg.org/mvdkleijn/forgejo-sdk/forgejo v1.2.0
-	github.com/google/go-github/v74 v74.0.0
+	github.com/google/go-github/v82 v82.0.0
 	github.com/ktrysmt/go-bitbucket v0.9.86
 	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/robfig/cron/v3 v3.0.1
@@ -42,5 +42,4 @@ require (
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
