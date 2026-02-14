@@ -8,7 +8,7 @@ require (
 	github.com/ktrysmt/go-bitbucket v0.9.86
 	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/spf13/cobra v1.9.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/xanzy/go-gitlab v0.115.0
 	go.uber.org/zap v1.27.1
