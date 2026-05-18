@@ -59,6 +59,10 @@ Default path: `~/.config/git-sync/config.yaml`. Override with `--config` flag or
 
 The `token` field is deprecated — use `tokens: []` (array) instead. Multiple tokens are distributed round-robin across concurrent operations.
 
+### GitHub token requirements
+
+Use a **classic Personal Access Token** (not a fine-grained token). Fine-grained tokens do not expose the necessary API endpoints for listing all repositories including organisation repos. The classic token requires the `repo` scope. If the organisation uses SSO, the token must also be SSO-authorised for that organisation in the GitHub token settings.
+
 ## Adding a new platform
 
 1. Create `pkg/<platform>/<platform>.go` implementing `client.Client`.
