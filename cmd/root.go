@@ -11,6 +11,7 @@ import (
 	"github.com/AkashRajpurohit/git-sync/pkg/github"
 	"github.com/AkashRajpurohit/git-sync/pkg/gitlab"
 	"github.com/AkashRajpurohit/git-sync/pkg/logger"
+	"github.com/AkashRajpurohit/git-sync/pkg/msdevops"
 	"github.com/AkashRajpurohit/git-sync/pkg/raw"
 	"github.com/AkashRajpurohit/git-sync/pkg/telemetry"
 	ch "github.com/robfig/cron/v3"
@@ -99,6 +100,8 @@ var rootCmd = &cobra.Command{
 			case "forgejo", "gitea":
 				// Forgejo and Gitea have same API, so we can use the same client
 				platformClient = forgejo.NewForgejoClient(cfg.Server, cfg.Tokens)
+			case "msdevops":
+				platformClient = msdevops.NewMSDevOpsClient(cfg.Server, cfg.Tokens)
 			default:
 				if !hasRawURLs {
 					logger.Fatalf("Platform %s not supported", cfg.Platform)

@@ -7,6 +7,7 @@ require (
 	github.com/google/go-github/v82 v82.0.0
 	github.com/google/uuid v1.6.0
 	github.com/ktrysmt/go-bitbucket v0.9.86
+	github.com/microsoft/azure-devops-go-api/azuredevops/v7 v7.1.0
 	github.com/posthog/posthog-go v1.10.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.10.2
