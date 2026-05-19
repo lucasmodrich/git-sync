@@ -3,6 +3,7 @@ package forgejo
 import (
 	"context"
 	"fmt"
+	"os"
 
 	fg "codeberg.org/mvdkleijn/forgejo-sdk/forgejo"
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
@@ -49,6 +50,21 @@ func (c *ForgejoClient) Sync(_ context.Context, cfg config.Config) error {
 	gitSync.SyncWithConcurrency(cfg, repos, func(repo *fg.Repository) {
 		owner := repo.Owner.UserName
 		name := repo.Name
+
+		if cfg.DryRun {
+			repoPath := gitSync.GetRepoPath(owner, name, cfg)
+			action := "clone"
+			if _, err := os.Stat(repoPath); err == nil {
+				action = "update"
+			}
+			logger.Infof("[dry-run] Would %s: %s/%s", action, owner, name)
+			gitSync.RecordRepoDryRun()
+			if cfg.IncludeWiki && repo.HasWiki {
+				logger.Infof("[dry-run] Would sync wiki: %s/%s", owner, name)
+				gitSync.RecordWikiDryRun()
+			}
+			return
+		}
 
 		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+name+".git", cfg.Username, c.tokenManager.GetNextToken())
 		gitSync.CloneOrUpdateRepo(owner, name, repoAuthURL, cfg)

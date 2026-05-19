@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -51,6 +52,25 @@ func (c *GitHubClient) Sync(ctx context.Context, cfg config.Config) error {
 	gitSync.SyncWithConcurrency(cfg, repos, func(repo *gh.Repository) {
 		owner := repo.GetOwner().GetLogin()
 		repoName := repo.GetName()
+
+		if cfg.DryRun {
+			repoPath := gitSync.GetRepoPath(owner, repoName, cfg)
+			action := "clone"
+			if _, err := os.Stat(repoPath); err == nil {
+				action = "update"
+			}
+			logger.Infof("[dry-run] Would %s: %s/%s", action, owner, repoName)
+			gitSync.RecordRepoDryRun()
+			if cfg.IncludeWiki && repo.GetHasWiki() {
+				logger.Infof("[dry-run] Would sync wiki: %s/%s", owner, repoName)
+				gitSync.RecordWikiDryRun()
+			}
+			if cfg.IncludeIssues && repo.GetHasIssues() {
+				logger.Infof("[dry-run] Would sync issues: %s/%s", owner, repoName)
+				gitSync.RecordIssuesDryRun()
+			}
+			return
+		}
 
 		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+repoName+".git", cfg.Username, c.tokenManager.GetNextToken())
 		gitSync.CloneOrUpdateRepo(owner, repoName, repoAuthURL, cfg)

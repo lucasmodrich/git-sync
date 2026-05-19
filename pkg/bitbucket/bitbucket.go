@@ -3,6 +3,7 @@ package bitbucket
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
 	"github.com/AkashRajpurohit/git-sync/pkg/helpers"
@@ -43,6 +44,21 @@ func (c *BitbucketClient) Sync(_ context.Context, cfg config.Config) error {
 	gitSync.SyncWithConcurrency(cfg, repos, func(repo *bb.Repository) {
 		owner := cfg.Workspace
 		name := repo.Name
+
+		if cfg.DryRun {
+			repoPath := gitSync.GetRepoPath(owner, name, cfg)
+			action := "clone"
+			if _, err := os.Stat(repoPath); err == nil {
+				action = "update"
+			}
+			logger.Infof("[dry-run] Would %s: %s/%s", action, owner, name)
+			gitSync.RecordRepoDryRun()
+			if cfg.IncludeWiki && repo.Has_wiki {
+				logger.Infof("[dry-run] Would sync wiki: %s/%s", owner, name)
+				gitSync.RecordWikiDryRun()
+			}
+			return
+		}
 
 		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+name+".git", cfg.Username, c.tokenManager.GetNextToken())
 		gitSync.CloneOrUpdateRepo(owner, name, repoAuthURL, cfg)

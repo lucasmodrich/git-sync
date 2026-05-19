@@ -2,10 +2,12 @@ package raw
 
 import (
 	"context"
+	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
+	"github.com/AkashRajpurohit/git-sync/pkg/logger"
 	gitSync "github.com/AkashRajpurohit/git-sync/pkg/sync"
 )
 
@@ -38,6 +40,18 @@ func (c RawClient) Sync(_ context.Context, cfg config.Config) error {
 
 	gitSync.SyncWithConcurrency(cfg, cfg.RawGitURLs, func(repoURL string) {
 		owner, name := c.extractRepoInfo(repoURL)
+
+		if cfg.DryRun {
+			repoPath := gitSync.GetRepoPath(owner, name, cfg)
+			action := "clone"
+			if _, err := os.Stat(repoPath); err == nil {
+				action = "update"
+			}
+			logger.Infof("[dry-run] Would %s: %s/%s", action, owner, name)
+			gitSync.RecordRepoDryRun()
+			return
+		}
+
 		gitSync.CloneOrUpdateRawRepo(owner, name, repoURL, cfg)
 	})
 

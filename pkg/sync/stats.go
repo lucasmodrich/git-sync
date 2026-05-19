@@ -20,6 +20,9 @@ type SyncStats struct {
 	WikisFailed   []string
 	IssuesSuccess int
 	IssuesFailed  []string
+	DryRunRepos   int
+	DryRunWikis   int
+	DryRunIssues  int
 }
 
 var stats = &SyncStats{}
@@ -60,11 +63,35 @@ func recordIssuesFailure(repoName string, err error) {
 	stats.IssuesFailed = append(stats.IssuesFailed, fmt.Sprintf("%s (Error: %v)", repoName, err))
 }
 
+func RecordRepoDryRun() {
+	stats.mu.Lock()
+	defer stats.mu.Unlock()
+	stats.DryRunRepos++
+}
+
+func RecordWikiDryRun() {
+	stats.mu.Lock()
+	defer stats.mu.Unlock()
+	stats.DryRunWikis++
+}
+
+func RecordIssuesDryRun() {
+	stats.mu.Lock()
+	defer stats.mu.Unlock()
+	stats.DryRunIssues++
+}
+
 func LogRepoCount(count int, repoType string) {
 	logger.Info("Total ", repoType, " repositories: ", count)
 }
 
 func LogSyncSummary(cfg *config.Config) {
+	if cfg.DryRun {
+		logger.Infof("[dry-run] Would sync %d repos, %d wikis, %d issue sets", stats.DryRunRepos, stats.DryRunWikis, stats.DryRunIssues)
+		stats = &SyncStats{}
+		return
+	}
+
 	logger.Infof("✅ Repositories: %d successfully synced", stats.ReposSuccess)
 	if len(stats.ReposFailed) > 0 {
 		logger.Errorf("❌ Failed repositories: %d", len(stats.ReposFailed))

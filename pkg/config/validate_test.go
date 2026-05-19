@@ -383,6 +383,29 @@ func TestValidateConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "DryRun with Cron is rejected",
+			cfg: Config{
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				Cron:        "0 * * * *",
+				DryRun:      true,
+				RawGitURLs:  []string{"https://github.com/user/repo.git"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "DryRun without Cron is valid",
+			cfg: Config{
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				DryRun:      true,
+				RawGitURLs:  []string{"https://github.com/user/repo.git"},
+			},
+			wantErr: false,
+		},
+		{
 			name: "Valid Mixed Config (Platform + Raw URLs)",
 			cfg: Config{
 				Username:    "test",

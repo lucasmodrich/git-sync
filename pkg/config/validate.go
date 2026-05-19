@@ -60,6 +60,10 @@ func ValidateConfig(cfg Config) error {
 		}
 	}
 
+	if cfg.DryRun && cfg.Cron != "" {
+		return fmt.Errorf("--dry-run cannot be combined with a cron schedule")
+	}
+
 	// Validate raw git URLs if provided
 	for _, url := range cfg.RawGitURLs {
 		if err := validateGitURL(url); err != nil {

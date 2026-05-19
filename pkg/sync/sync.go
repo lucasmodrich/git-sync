@@ -17,6 +17,12 @@ func getBaseDirectoryPath(repoOwner, repoName string, config config.Config) stri
 	return filepath.Join(config.BackupDir, repoOwner, repoName)
 }
 
+// GetRepoPath returns the local path of a repository's git directory.
+// Use this at dry-run call sites to determine whether a clone or update would occur.
+func GetRepoPath(repoOwner, repoName string, cfg config.Config) string {
+	return filepath.Join(getBaseDirectoryPath(repoOwner, repoName, cfg), repoName+".git")
+}
+
 func getGitCloneCommand(cloneType, repoPath, repoURL string) *exec.Cmd {
 	switch cloneType {
 	case "bare":

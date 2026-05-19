@@ -27,6 +27,7 @@ var (
 	backupDir string
 	logLevel  string = "info"
 	cron      string
+	dryRun    bool
 )
 
 var rootCmd = &cobra.Command{
@@ -74,6 +75,8 @@ var rootCmd = &cobra.Command{
 		if cron != "" {
 			cfg.Cron = cron
 		}
+
+		cfg.DryRun = dryRun
 
 		logger.Info("Config loaded from: ", configPath)
 		logger.Debug("Validating config ⏳")
@@ -185,4 +188,5 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&backupDir, "backup-dir", "", "directory to backup repositories (default is $HOME/git-backups)")
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "log level (debug, info, warn, error, fatal)")
 	rootCmd.PersistentFlags().StringVar(&cron, "cron", "", "cron expression to run the sync job periodically")
+	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "show what would be synced without performing any git operations")
 }

@@ -69,6 +69,8 @@ type Config struct {
 	Retry         RetryConfig        `mapstructure:"retry"`
 	Notification  NotificationConfig `mapstructure:"notification"`
 	Telemetry     TelemetryConfig    `mapstructure:"telemetry"`
+	// DryRun is runtime-only — never persisted to or loaded from the config file.
+	DryRun bool `mapstructure:"-"`
 }
 
 func expandPath(path string) string {

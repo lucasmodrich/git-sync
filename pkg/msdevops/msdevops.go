@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"os"
 	"path/filepath"
 
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
@@ -121,6 +122,17 @@ func (c *MSDevOpsClient) Sync(_ context.Context, cfg config.Config) error {
 		// Backup layout: <backup_dir>/<org>/<project>/<repo>/
 		// filepath.Join handles OS-specific path separators correctly.
 		repoOwner := filepath.Join(cfg.Server.Organization, projectName)
+
+		if cfg.DryRun {
+			repoPath := gitSync.GetRepoPath(repoOwner, repoName, cfg)
+			action := "clone"
+			if _, err := os.Stat(repoPath); err == nil {
+				action = "update"
+			}
+			logger.Infof("[dry-run] Would %s: %s/%s", action, repoOwner, repoName)
+			gitSync.RecordRepoDryRun()
+			return
+		}
 
 		// RemoteUrl is the HTTPS clone URL returned by the API. WebUrl is the browser
 		// portal URL and is NOT a valid git remote — never use it as a fallback.

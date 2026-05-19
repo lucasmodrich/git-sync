@@ -3,6 +3,7 @@ package gitlab
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
@@ -50,6 +51,25 @@ func (c *GitlabClient) Sync(ctx context.Context, cfg config.Config) error {
 	gitSync.SyncWithConcurrency(cfg, projects, func(project *gl.Project) {
 		ns := project.Namespace.FullPath
 		name := project.Path
+
+		if cfg.DryRun {
+			repoPath := gitSync.GetRepoPath(ns, name, cfg)
+			action := "clone"
+			if _, err := os.Stat(repoPath); err == nil {
+				action = "update"
+			}
+			logger.Infof("[dry-run] Would %s: %s/%s", action, ns, name)
+			gitSync.RecordRepoDryRun()
+			if cfg.IncludeWiki && project.WikiEnabled {
+				logger.Infof("[dry-run] Would sync wiki: %s/%s", ns, name)
+				gitSync.RecordWikiDryRun()
+			}
+			if cfg.IncludeIssues && project.IssuesEnabled {
+				logger.Infof("[dry-run] Would sync issues: %s/%s", ns, name)
+				gitSync.RecordIssuesDryRun()
+			}
+			return
+		}
 
 		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+ns+"/"+name+".git", cfg.Username, c.tokenManager.GetNextToken())
 		gitSync.CloneOrUpdateRepo(ns, name, repoAuthURL, cfg)
