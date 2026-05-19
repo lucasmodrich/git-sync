@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
 )
 
 func retryOperation(cfg config.Config, operation func() error, operationName string) error {

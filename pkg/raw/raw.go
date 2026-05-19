@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
-	gitSync "github.com/AkashRajpurohit/git-sync/pkg/sync"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
+	gitSync "github.com/lucasmodrich/git-sync/pkg/sync"
 )
 
 type RawClient struct{}

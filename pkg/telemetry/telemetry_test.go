@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
 )
 
 func TestMain(m *testing.M) {

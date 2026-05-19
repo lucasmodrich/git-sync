@@ -3,8 +3,8 @@ package client
 import (
 	"context"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/token"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/token"
 )
 
 type Client interface {

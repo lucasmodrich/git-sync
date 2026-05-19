@@ -3,7 +3,7 @@ package config
 import (
 	"testing"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
 )
 
 func TestSetSensibleDefaults(t *testing.T) {

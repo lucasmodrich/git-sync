@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  REGISTRY_IMAGE: ghcr.io/akashrajpurohit/git-sync
+  REGISTRY_IMAGE: ghcr.io/lucasmodrich/git-sync
 
 jobs:
   test:

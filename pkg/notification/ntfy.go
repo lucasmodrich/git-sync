@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/config"
 )
 
 type NtfyProvider struct {

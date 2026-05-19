@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
-	"github.com/AkashRajpurohit/git-sync/pkg/wizard"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
+	"github.com/lucasmodrich/git-sync/pkg/wizard"
 	"github.com/charmbracelet/huh"
 	"github.com/spf13/cobra"
 )

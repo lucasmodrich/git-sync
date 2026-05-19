@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
 	"github.com/spf13/viper"
 )
 

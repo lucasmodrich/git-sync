@@ -1,4 +1,4 @@
-module github.com/AkashRajpurohit/git-sync
+module github.com/lucasmodrich/git-sync
 
 go 1.24.5
 

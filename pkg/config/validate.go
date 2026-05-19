@@ -81,7 +81,7 @@ func ValidateConfig(cfg Config) error {
 
 		// At least one token is required for platform-specific sync
 		if len(cfg.Tokens) == 0 && cfg.Token == "" {
-			return fmt.Errorf("at least one token must be provided when no raw git URLs are provided. See here: https://github.com/AkashRajpurohit/git-sync/wiki/Configuration")
+			return fmt.Errorf("at least one token must be provided when no raw git URLs are provided. See here: https://github.com/lucasmodrich/git-sync/wiki/Configuration")
 		}
 
 		if cfg.Platform != "github" && cfg.Platform != "gitlab" && cfg.Platform != "bitbucket" && cfg.Platform != "forgejo" && cfg.Platform != "gitea" && cfg.Platform != "msdevops" {

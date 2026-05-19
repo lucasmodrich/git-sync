@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/posthog/posthog-go"
 )
 
-const posthogAPIKey = "phc_IUI4rNyfkWwpSNPvWyrO0bOQkI0byAGyDQRKIQMGc7w"
+const posthogAPIKey = "phc_mpPK4CYi3dzHLSnQKV7ef52WjvpNpgkFFRyowq9u5xCi"
 
 var (
 	client   posthog.Client

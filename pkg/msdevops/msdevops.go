@@ -9,11 +9,11 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/helpers"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
-	gitSync "github.com/AkashRajpurohit/git-sync/pkg/sync"
-	"github.com/AkashRajpurohit/git-sync/pkg/token"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/helpers"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
+	gitSync "github.com/lucasmodrich/git-sync/pkg/sync"
+	"github.com/lucasmodrich/git-sync/pkg/token"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7"
 	"github.com/microsoft/azure-devops-go-api/azuredevops/v7/git"
 )

@@ -6,11 +6,11 @@ import (
 	"os"
 
 	fg "codeberg.org/mvdkleijn/forgejo-sdk/forgejo"
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/helpers"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
-	gitSync "github.com/AkashRajpurohit/git-sync/pkg/sync"
-	"github.com/AkashRajpurohit/git-sync/pkg/token"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/helpers"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
+	gitSync "github.com/lucasmodrich/git-sync/pkg/sync"
+	"github.com/lucasmodrich/git-sync/pkg/token"
 )
 
 type ForgejoClient struct {

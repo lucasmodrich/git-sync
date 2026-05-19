@@ -5,11 +5,11 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
-	"github.com/AkashRajpurohit/git-sync/pkg/notification"
-	"github.com/AkashRajpurohit/git-sync/pkg/telemetry"
-	"github.com/AkashRajpurohit/git-sync/pkg/version"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
+	"github.com/lucasmodrich/git-sync/pkg/notification"
+	"github.com/lucasmodrich/git-sync/pkg/telemetry"
+	"github.com/lucasmodrich/git-sync/pkg/version"
 )
 
 type SyncStats struct {

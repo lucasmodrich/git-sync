@@ -8,16 +8,16 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/bitbucket"
-	"github.com/AkashRajpurohit/git-sync/pkg/client"
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
-	"github.com/AkashRajpurohit/git-sync/pkg/forgejo"
-	"github.com/AkashRajpurohit/git-sync/pkg/github"
-	"github.com/AkashRajpurohit/git-sync/pkg/gitlab"
-	"github.com/AkashRajpurohit/git-sync/pkg/logger"
-	"github.com/AkashRajpurohit/git-sync/pkg/msdevops"
-	"github.com/AkashRajpurohit/git-sync/pkg/raw"
-	"github.com/AkashRajpurohit/git-sync/pkg/telemetry"
+	"github.com/lucasmodrich/git-sync/pkg/bitbucket"
+	"github.com/lucasmodrich/git-sync/pkg/client"
+	"github.com/lucasmodrich/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/forgejo"
+	"github.com/lucasmodrich/git-sync/pkg/github"
+	"github.com/lucasmodrich/git-sync/pkg/gitlab"
+	"github.com/lucasmodrich/git-sync/pkg/logger"
+	"github.com/lucasmodrich/git-sync/pkg/msdevops"
+	"github.com/lucasmodrich/git-sync/pkg/raw"
+	"github.com/lucasmodrich/git-sync/pkg/telemetry"
 	ch "github.com/robfig/cron/v3"
 	"github.com/spf13/cobra"
 )
@@ -49,7 +49,7 @@ var rootCmd = &cobra.Command{
 				logger.Fatal("Error in saving config file: ", err)
 			}
 			logger.Infof("Created new config file at: %s", configPath)
-			logger.Info("Please update the configuration according to your needs. See: https://github.com/AkashRajpurohit/git-sync/wiki/Configuration")
+			logger.Info("Please update the configuration according to your needs. See: https://github.com/lucasmodrich/git-sync/wiki/Configuration")
 			return
 		}
 
@@ -58,7 +58,7 @@ var rootCmd = &cobra.Command{
 		if err != nil {
 			if _, ok := err.(*config.InvalidConfigError); ok {
 				logger.Errorf("Invalid configuration: %v", err)
-				logger.Info("Please check for correct configuration format at: https://github.com/AkashRajpurohit/git-sync/wiki/Configuration")
+				logger.Info("Please check for correct configuration format at: https://github.com/lucasmodrich/git-sync/wiki/Configuration")
 				return
 			}
 			logger.Fatalf("Error loading config file: %v", err)

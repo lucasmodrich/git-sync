@@ -3,7 +3,7 @@ package sync
 import (
 	"sync"
 
-	"github.com/AkashRajpurohit/git-sync/pkg/config"
+	"github.com/lucasmodrich/git-sync/pkg/config"
 )
 
 func SyncWithConcurrency[T any](cfg config.Config, repos []T, syncFn func(T)) {
