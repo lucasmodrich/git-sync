@@ -11,14 +11,7 @@ import (
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
 	"github.com/AkashRajpurohit/git-sync/pkg/issues"
 	"github.com/AkashRajpurohit/git-sync/pkg/logger"
-	"github.com/AkashRajpurohit/git-sync/pkg/token"
 )
-
-var tokenManager *token.Manager
-
-func InitTokenManager(tokens []string) {
-	tokenManager = token.NewManager(tokens)
-}
 
 func getBaseDirectoryPath(repoOwner, repoName string, config config.Config) string {
 	return filepath.Join(config.BackupDir, repoOwner, repoName)
@@ -54,9 +47,9 @@ func getGitFetchCommand(cloneType, repoPath, repoURL string) *exec.Cmd {
 	}
 }
 
-// buildAuthURL constructs a credential-embedded clone URL and a redacted
+// BuildAuthURL constructs a credential-embedded clone URL and a redacted
 // variant safe for logging. username and password are URL-encoded by net/url.
-func buildAuthURL(scheme, host, path, username, password string) (authURL, safeURL string) {
+func BuildAuthURL(scheme, host, path, username, password string) (authURL, safeURL string) {
 	u := &url.URL{
 		Scheme: scheme,
 		User:   url.UserPassword(username, password),
@@ -66,20 +59,17 @@ func buildAuthURL(scheme, host, path, username, password string) (authURL, safeU
 	return u.String(), u.Redacted()
 }
 
-func CloneOrUpdateRepo(repoOwner, repoName string, config config.Config) {
-	if tokenManager == nil {
-		InitTokenManager(config.Tokens)
-	}
-
+// CloneOrUpdateRepo clones or updates a platform-hosted repository.
+// authURL must be a fully-formed authenticated clone URL built by the caller
+// (use BuildAuthURL); it is never logged directly.
+func CloneOrUpdateRepo(repoOwner, repoName, authURL string, config config.Config) {
 	repoFullName := fmt.Sprintf("%s/%s", repoOwner, repoName)
 	repoPath := filepath.Join(getBaseDirectoryPath(repoOwner, repoName, config), repoName+".git")
-	authURL, safeURL := buildAuthURL(
-		config.Server.Protocol,
-		config.Server.Domain,
-		"/"+repoFullName+".git",
-		config.Username,
-		tokenManager.GetNextToken(),
-	)
+
+	safeURL := repoFullName
+	if u, err := url.Parse(authURL); err == nil {
+		safeURL = u.Redacted()
+	}
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		logger.Infof("Cloning repo: %s", safeURL)
@@ -171,30 +161,22 @@ func CloneOrUpdateRawRepo(repoOwner, repoName, repoURL string, config config.Con
 	}
 }
 
-func SyncWiki(repoOwner, repoName string, config config.Config) {
-	if tokenManager == nil {
-		InitTokenManager(config.Tokens)
-	}
-
+// SyncWiki clones or updates a repository's wiki.
+// wikiURL must be a fully-formed authenticated URL; use BuildAuthURL to construct it.
+func SyncWiki(repoOwner, repoName, wikiURL string, config config.Config) {
 	repoFullName := fmt.Sprintf("%s/%s", repoOwner, repoName)
 	repoWikiPath := filepath.Join(getBaseDirectoryPath(repoOwner, repoName, config), repoName+".wiki.git")
-
-	wikiPath := "/" + repoFullName + ".wiki.git"
-	if config.Platform == "bitbucket" {
-		// Bitbucket wiki repos use a different URL pattern:
-		// https://support.atlassian.com/bitbucket-cloud/docs/clone-a-wiki/
-		wikiPath = "/" + repoFullName + ".git/wiki"
-	}
-	repoWikiURL, _ := buildAuthURL(config.Server.Protocol, config.Server.Domain, wikiPath, config.Username, tokenManager.GetNextToken())
 
 	if _, err := os.Stat(repoWikiPath); os.IsNotExist(err) {
 		logger.Info("Cloning wiki: ", repoFullName)
 		wikiNotFound := false
 
 		err := retryOperation(config, func() error {
-			command := exec.Command("git", "clone", repoWikiURL, repoWikiPath)
+			command := exec.Command("git", "clone", wikiURL, repoWikiPath)
 			output, err := command.CombinedOutput()
-			logger.Debugf("Output: %s\n", output)
+			if err != nil {
+				logger.Debugf("git clone wiki output: %s", output)
+			}
 			if err != nil && strings.Contains(string(output), "not found") {
 				wikiNotFound = true
 				// Don't retry for non-existent wikis
@@ -221,7 +203,9 @@ func SyncWiki(repoOwner, repoName string, config config.Config) {
 		err := retryOperation(config, func() error {
 			command := exec.Command("git", "-C", repoWikiPath, "pull", "--prune", "origin")
 			output, err := command.CombinedOutput()
-			logger.Debugf("Output: %s\n", output)
+			if err != nil {
+				logger.Debugf("git pull wiki output: %s", output)
+			}
 			return err
 		}, fmt.Sprintf("update wiki %s", repoFullName))
 

@@ -51,9 +51,13 @@ func (c *GitHubClient) Sync(cfg config.Config) error {
 	gitSync.SyncWithConcurrency(cfg, repos, func(repo *gh.Repository) {
 		owner := repo.GetOwner().GetLogin()
 		repoName := repo.GetName()
-		gitSync.CloneOrUpdateRepo(owner, repoName, cfg)
+
+		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+repoName+".git", cfg.Username, c.tokenManager.GetNextToken())
+		gitSync.CloneOrUpdateRepo(owner, repoName, repoAuthURL, cfg)
+
 		if cfg.IncludeWiki && repo.GetHasWiki() {
-			gitSync.SyncWiki(owner, repoName, cfg)
+			wikiAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+repoName+".wiki.git", cfg.Username, c.tokenManager.GetNextToken())
+			gitSync.SyncWiki(owner, repoName, wikiAuthURL, cfg)
 		}
 		if cfg.IncludeIssues && repo.GetHasIssues() {
 			since, hasPrevSync := issues.ReadLastSyncTime(cfg.BackupDir, owner, repoName)

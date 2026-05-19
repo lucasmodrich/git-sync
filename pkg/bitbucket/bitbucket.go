@@ -38,9 +38,16 @@ func (c *BitbucketClient) Sync(cfg config.Config) error {
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
 	gitSync.SyncWithConcurrency(cfg, repos, func(repo *bb.Repository) {
-		gitSync.CloneOrUpdateRepo(cfg.Workspace, repo.Name, cfg)
+		owner := cfg.Workspace
+		name := repo.Name
+
+		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+name+".git", cfg.Username, c.tokenManager.GetNextToken())
+		gitSync.CloneOrUpdateRepo(owner, name, repoAuthURL, cfg)
+
 		if cfg.IncludeWiki && repo.Has_wiki {
-			gitSync.SyncWiki(cfg.Workspace, repo.Name, cfg)
+			// Bitbucket wiki URL pattern: https://support.atlassian.com/bitbucket-cloud/docs/clone-a-wiki/
+			wikiAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+name+".git/wiki", cfg.Username, c.tokenManager.GetNextToken())
+			gitSync.SyncWiki(owner, name, wikiAuthURL, cfg)
 		}
 	})
 
