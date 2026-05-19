@@ -298,6 +298,55 @@ func TestValidateConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "Valid msdevops Config",
+			cfg: Config{
+				Tokens:      []string{"token1"},
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				Platform:    "msdevops",
+				Server: Server{
+					Domain:       "dev.azure.com",
+					Protocol:     "https",
+					Organization: "my-org",
+				},
+				Workspace: "my-project",
+			},
+			wantErr: false,
+		},
+		{
+			name: "msdevops missing organization",
+			cfg: Config{
+				Tokens:      []string{"token1"},
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				Platform:    "msdevops",
+				Server: Server{
+					Domain:   "dev.azure.com",
+					Protocol: "https",
+				},
+				Workspace: "my-project",
+			},
+			wantErr: true,
+		},
+		{
+			name: "msdevops missing workspace",
+			cfg: Config{
+				Tokens:      []string{"token1"},
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				Platform:    "msdevops",
+				Server: Server{
+					Domain:       "dev.azure.com",
+					Protocol:     "https",
+					Organization: "my-org",
+				},
+			},
+			wantErr: true,
+		},
+		{
 			name: "Valid Mixed Config (Platform + Raw URLs)",
 			cfg: Config{
 				Username:    "test",

@@ -135,6 +135,21 @@ func TestSetSensibleDefaults(t *testing.T) {
 			},
 		},
 		{
+			name: "msdevops platform defaults",
+			cfg: Config{
+				Platform: "msdevops",
+			},
+			expected: Config{
+				Platform: "msdevops",
+				Server: Server{
+					Domain:   "dev.azure.com",
+					Protocol: "https",
+				},
+				CloneType:   "bare",
+				Concurrency: 5,
+			},
+		},
+		{
 			name: "Keep existing values if already set",
 			cfg: Config{
 				Platform:    "github",

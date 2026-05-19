@@ -11,8 +11,9 @@ import (
 )
 
 type Server struct {
-	Domain   string `mapstructure:"domain"`
-	Protocol string `mapstructure:"protocol"`
+	Domain       string `mapstructure:"domain"`
+	Protocol     string `mapstructure:"protocol"`
+	Organization string `mapstructure:"organization"` // Required for msdevops: the Azure DevOps organisation name
 }
 
 type RetryConfig struct {

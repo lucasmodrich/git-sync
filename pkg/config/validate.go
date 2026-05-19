@@ -97,6 +97,12 @@ func ValidateConfig(cfg Config) error {
 		if (cfg.Platform == "bitbucket" || cfg.Platform == "msdevops") && cfg.Workspace == "" {
 			return fmt.Errorf("workspace cannot be empty for %s", cfg.Platform)
 		}
+
+		// Organization (server.organization) is required for Azure DevOps — it forms part of the
+		// API base URL: https://<domain>/<organization>
+		if cfg.Platform == "msdevops" && cfg.Server.Organization == "" {
+			return fmt.Errorf("server.organization cannot be empty for msdevops")
+		}
 	}
 
 	return nil
