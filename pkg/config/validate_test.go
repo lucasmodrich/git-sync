@@ -347,6 +347,42 @@ func TestValidateConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "msdevops include_wiki not supported",
+			cfg: Config{
+				Tokens:      []string{"token1"},
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				Platform:    "msdevops",
+				Server: Server{
+					Domain:       "dev.azure.com",
+					Protocol:     "https",
+					Organization: "my-org",
+				},
+				Workspace:   "my-project",
+				IncludeWiki: true,
+			},
+			wantErr: true,
+		},
+		{
+			name: "msdevops include_issues not supported",
+			cfg: Config{
+				Tokens:      []string{"token1"},
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				Platform:    "msdevops",
+				Server: Server{
+					Domain:       "dev.azure.com",
+					Protocol:     "https",
+					Organization: "my-org",
+				},
+				Workspace:     "my-project",
+				IncludeIssues: true,
+			},
+			wantErr: true,
+		},
+		{
 			name: "Valid Mixed Config (Platform + Raw URLs)",
 			cfg: Config{
 				Username:    "test",

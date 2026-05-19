@@ -103,6 +103,16 @@ func ValidateConfig(cfg Config) error {
 		if cfg.Platform == "msdevops" && cfg.Server.Organization == "" {
 			return fmt.Errorf("server.organization cannot be empty for msdevops")
 		}
+
+		// Feature flags not yet implemented for Azure DevOps.
+		// ADO wikis are a separate API resource; ADO Work Items require a different data model.
+		// Enabling these flags would silently produce no output, so we fail fast instead.
+		if cfg.Platform == "msdevops" && cfg.IncludeWiki {
+			return fmt.Errorf("include_wiki is not yet supported for msdevops")
+		}
+		if cfg.Platform == "msdevops" && cfg.IncludeIssues {
+			return fmt.Errorf("include_issues is not supported for msdevops (Azure DevOps Work Items require a separate integration)")
+		}
 	}
 
 	return nil
