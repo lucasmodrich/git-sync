@@ -13,24 +13,24 @@ func validateGitURL(rawURL string) error {
 	// Handle SSH URLs (git@github.com:user/repo.git)
 	if strings.HasPrefix(rawURL, "git@") {
 		parts := strings.Split(rawURL, ":")
-		if len(parts) != 2 || !strings.HasSuffix(parts[1], ".git") {
+		if len(parts) != 2 || parts[1] == "" {
 			return fmt.Errorf("invalid SSH git URL format: %s", rawURL)
 		}
 		return nil
 	}
 
-	// Handle HTTPS URLs
+	// Handle HTTPS/HTTP URLs
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return fmt.Errorf("invalid git URL: %s", rawURL)
 	}
 
 	if u.Scheme != "http" && u.Scheme != "https" {
-		return fmt.Errorf("git URL must use http or https protocol: %s", rawURL)
+		return fmt.Errorf("git URL must use http, https, or SSH (git@) protocol: %s", rawURL)
 	}
 
-	if !strings.HasSuffix(u.Path, ".git") {
-		return fmt.Errorf("git URL must end with .git: %s", rawURL)
+	if u.Host == "" || u.Path == "" || u.Path == "/" {
+		return fmt.Errorf("git URL must include a host and repository path: %s", rawURL)
 	}
 
 	return nil
@@ -92,9 +92,9 @@ func ValidateConfig(cfg Config) error {
 			return fmt.Errorf("server protocol can only be http or https")
 		}
 
-		// Workspace is required only for Bitbucket
-		if cfg.Platform == "bitbucket" && cfg.Workspace == "" {
-			return fmt.Errorf("workspace cannot be empty for bitbucket")
+		// Workspace is required for Bitbucket and Azure DevOps
+		if (cfg.Platform == "bitbucket" || cfg.Platform == "msdevops") && cfg.Workspace == "" {
+			return fmt.Errorf("workspace cannot be empty for %s", cfg.Platform)
 		}
 	}
 

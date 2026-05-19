@@ -87,7 +87,6 @@ func (c *GitHubClient) getRepos(cfg config.Config) ([]*gh.Repository, error) {
 			continue
 		}
 
-		var reposToInclude []*gh.Repository
 		for _, repo := range repos {
 			repoName := repo.GetName()
 			isOrganizationRepo := repo.Owner.GetType() == "Organization"
@@ -96,9 +95,8 @@ func (c *GitHubClient) getRepos(cfg config.Config) ([]*gh.Repository, error) {
 			if len(cfg.IncludeOrgs) > 0 {
 				if isOrganizationRepo && helpers.IsIncludedInList(cfg.IncludeOrgs, orgName) {
 					logger.Debug("[include_orgs] Repo included: ", repoName)
-					reposToInclude = append(reposToInclude, repo)
+					allRepos = append(allRepos, repo)
 				}
-
 				continue
 			}
 
@@ -112,9 +110,8 @@ func (c *GitHubClient) getRepos(cfg config.Config) ([]*gh.Repository, error) {
 			if len(cfg.IncludeRepos) > 0 {
 				if helpers.IsIncludedInList(cfg.IncludeRepos, repoName) {
 					logger.Debug("[include_repos] Repo included: ", repoName)
-					reposToInclude = append(reposToInclude, repo)
+					allRepos = append(allRepos, repo)
 				}
-
 				continue
 			}
 
@@ -131,10 +128,8 @@ func (c *GitHubClient) getRepos(cfg config.Config) ([]*gh.Repository, error) {
 			}
 
 			logger.Debug("Repo included: ", repoName)
-			reposToInclude = append(reposToInclude, repo)
+			allRepos = append(allRepos, repo)
 		}
-
-		allRepos = append(allRepos, reposToInclude...)
 		if resp.NextPage == 0 {
 			break
 		}

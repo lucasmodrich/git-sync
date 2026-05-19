@@ -21,8 +21,13 @@ func TestValidateGitURL(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "Invalid HTTPS URL - No .git suffix",
+			name:    "Valid HTTPS URL - No .git suffix",
 			url:     "https://github.com/user/repo",
+			wantErr: false,
+		},
+		{
+			name:    "Invalid HTTPS URL - Missing path",
+			url:     "https://github.com",
 			wantErr: true,
 		},
 		{
@@ -213,7 +218,7 @@ func TestValidateConfig(t *testing.T) {
 				CloneType:   "bare",
 				Concurrency: 5,
 				RawGitURLs: []string{
-					"https://github.com/user/repo1", // Missing .git
+					"ftp://github.com/user/repo1", // Invalid protocol
 					"git@github.com:user/repo2.git",
 				},
 			},

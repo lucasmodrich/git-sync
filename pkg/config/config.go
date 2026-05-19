@@ -72,7 +72,11 @@ type Config struct {
 
 func expandPath(path string) string {
 	if strings.HasPrefix(path, "~/") {
-		homeDir, _ := os.UserHomeDir()
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			logger.Warnf("Could not resolve home directory: %v — using path as-is", err)
+			return path
+		}
 		return filepath.Join(homeDir, path[2:])
 	}
 	return path

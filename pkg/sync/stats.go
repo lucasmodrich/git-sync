@@ -67,35 +67,26 @@ func LogRepoCount(count int, repoType string) {
 func LogSyncSummary(cfg *config.Config) {
 	logger.Infof("✅ Repositories: %d successfully synced", stats.ReposSuccess)
 	if len(stats.ReposFailed) > 0 {
-		failedRepos := []string{}
-		for _, repo := range stats.ReposFailed {
-			failedRepos = append(failedRepos, repo)
+		logger.Errorf("❌ Failed repositories: %d", len(stats.ReposFailed))
+		for _, r := range stats.ReposFailed {
+			logger.Errorf("  - %s", r)
 		}
-
-		logger.Errorf("❌ Failed repositories: %d", len(failedRepos))
-		logger.Errorf("%s", failedRepos)
 	}
 
 	logger.Infof("✅ Wikis: %d successfully synced", stats.WikisSuccess)
 	if len(stats.WikisFailed) > 0 {
-		failedWikis := []string{}
-		for _, wiki := range stats.WikisFailed {
-			failedWikis = append(failedWikis, wiki)
+		logger.Errorf("❌ Failed wikis: %d", len(stats.WikisFailed))
+		for _, w := range stats.WikisFailed {
+			logger.Errorf("  - %s", w)
 		}
-
-		logger.Errorf("❌ Failed wikis: %d", len(failedWikis))
-		logger.Errorf("%s", failedWikis)
 	}
 
 	logger.Infof("✅ Issues: %d repositories' issues synced", stats.IssuesSuccess)
 	if len(stats.IssuesFailed) > 0 {
-		failedIssues := []string{}
-		for _, issue := range stats.IssuesFailed {
-			failedIssues = append(failedIssues, issue)
+		logger.Errorf("❌ Failed issues: %d", len(stats.IssuesFailed))
+		for _, i := range stats.IssuesFailed {
+			logger.Errorf("  - %s", i)
 		}
-
-		logger.Errorf("❌ Failed issues: %d", len(failedIssues))
-		logger.Errorf("%s", failedIssues)
 	}
 
 	summary := &notification.SyncSummary{

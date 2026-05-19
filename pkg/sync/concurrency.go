@@ -12,11 +12,11 @@ func SyncWithConcurrency[T any](cfg config.Config, repos []T, syncFn func(T)) {
 
 	for _, repo := range repos {
 		wg.Add(1)
+		sem <- struct{}{}
 		go func(r T) {
 			defer wg.Done()
-			sem <- struct{}{}
+			defer func() { <-sem }()
 			syncFn(r)
-			<-sem
 		}(repo)
 	}
 
