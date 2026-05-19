@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path/filepath"
 
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
 	"github.com/AkashRajpurohit/git-sync/pkg/helpers"
@@ -35,24 +36,33 @@ func (c *MSDevOpsClient) GetTokenManager() *token.Manager {
 	return c.tokenManager
 }
 
-// createConnection creates a new Azure DevOps connection using the provided token manager and server configuration.
+// createConnection creates an Azure DevOps connection. The organisation is part of the
+// base URL — the SDK resolves all service endpoints relative to it:
+// https://<domain>/<organization>/_apis/...
 func (c *MSDevOpsClient) createConnection() (*azuredevops.Connection, error) {
 	if c.serverConfig.Protocol == "" || c.serverConfig.Domain == "" {
 		return nil, fmt.Errorf("invalid server configuration: protocol and domain must be specified")
 	}
+	if c.serverConfig.Organization == "" {
+		return nil, fmt.Errorf("server.organization must be set for msdevops")
+	}
 
-	organizationURL := fmt.Sprintf("%s://%s", c.serverConfig.Protocol, c.serverConfig.Domain)
+	organizationURL := fmt.Sprintf("%s://%s/%s",
+		c.serverConfig.Protocol,
+		c.serverConfig.Domain,
+		c.serverConfig.Organization,
+	)
 	logger.Debugf("Creating Azure DevOps connection for: %s", organizationURL)
 
-	token := c.tokenManager.GetNextToken()
-	if token == "" {
+	pat := c.tokenManager.GetNextToken()
+	if pat == "" {
 		return nil, fmt.Errorf("a valid token was not available")
 	}
 
-	return azuredevops.NewPatConnection(organizationURL, token), nil
+	return azuredevops.NewPatConnection(organizationURL, pat), nil
 }
 
-// createClient initializes and returns a new Azure DevOps Git client using the provided token manager and server configuration.
+// createClient initialises a Git API client bound to the connection's organisation URL.
 func (c *MSDevOpsClient) createClient(ctx context.Context) (git.Client, error) {
 	connection, err := c.createConnection()
 	if err != nil {
@@ -61,14 +71,13 @@ func (c *MSDevOpsClient) createClient(ctx context.Context) (git.Client, error) {
 
 	client, err := git.NewClient(ctx, connection)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Azure DevOps client: %w", err)
+		return nil, fmt.Errorf("failed to create Azure DevOps git client: %w", err)
 	}
 
 	return client, nil
 }
 
-
-// derefString returns the value of a string pointer or an empty string if the pointer is nil.
+// derefString returns the value of a string pointer or an empty string if nil.
 func derefString(ref *string) string {
 	if ref == nil {
 		return ""
@@ -76,9 +85,8 @@ func derefString(ref *string) string {
 	return *ref
 }
 
-// buildRepoAuthURL injects a PAT into an Azure DevOps remote URL using net/url so
-// the token is correctly percent-encoded and the URL structure is never corrupted.
-// Azure DevOps PAT auth uses an empty username with the token as the password.
+// buildRepoAuthURL injects a PAT into an Azure DevOps clone URL using net/url so the
+// token is correctly percent-encoded. Azure DevOps PAT auth uses an empty username.
 func buildRepoAuthURL(rawURL, pat string) (string, error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -91,37 +99,51 @@ func buildRepoAuthURL(rawURL, pat string) (string, error) {
 	return u.String(), nil
 }
 
-// Sync synchronizes all accessible Azure DevOps repositories based on the provided configuration.
+// Sync synchronizes all accessible Azure DevOps repositories for the configured project.
 func (c *MSDevOpsClient) Sync(cfg config.Config) error {
 	repos, err := c.getRepos(cfg)
 	if err != nil {
-		return fmt.Errorf("failed to get user repositories: %w", err)
+		return fmt.Errorf("failed to get repositories: %w", err)
 	}
 
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
 	gitSync.SyncWithConcurrency(cfg, repos, func(repo git.GitRepository) {
-		repoOwner := derefString(repo.Project.Name)
-		repoName := derefString(repo.Name)
-		webURL := derefString(repo.RemoteUrl)
-		if webURL == "" {
-			webURL = derefString(repo.WebUrl)
-		}
-
-		authURL, err := buildRepoAuthURL(webURL, c.tokenManager.GetNextToken())
-		if err != nil {
-			logger.Errorf("Failed to build auth URL for %s/%s: %v", repoOwner, repoName, err)
+		// Guard: Project is a pointer and may be absent for orphaned repositories.
+		if repo.Project == nil {
+			logger.Warnf("Skipping repository %q — missing project reference", derefString(repo.Name))
 			return
 		}
 
-		gitSync.CloneOrUpdateRawRepo(repoOwner, repoName, authURL, cfg)
+		projectName := derefString(repo.Project.Name)
+		repoName := derefString(repo.Name)
+
+		// Backup layout: <backup_dir>/<org>/<project>/<repo>/
+		// filepath.Join handles OS-specific path separators correctly.
+		repoOwner := filepath.Join(cfg.Server.Organization, projectName)
+
+		// RemoteUrl is the HTTPS clone URL returned by the API. WebUrl is the browser
+		// portal URL and is NOT a valid git remote — never use it as a fallback.
+		remoteURL := derefString(repo.RemoteUrl)
+		if remoteURL == "" {
+			logger.Errorf("Skipping %s/%s — RemoteUrl is empty (repository may be disabled or migrating)", projectName, repoName)
+			return
+		}
+
+		authURL, err := buildRepoAuthURL(remoteURL, c.tokenManager.GetNextToken())
+		if err != nil {
+			logger.Errorf("Failed to build auth URL for %s/%s: %v", projectName, repoName, err)
+			return
+		}
+
+		gitSync.CloneOrUpdateRepo(repoOwner, repoName, authURL, cfg)
 	})
 
 	gitSync.LogSyncSummary(&cfg)
 	return nil
 }
 
-// getRepos fetches all accessible repositories for the authenticated user and applies filtering.
+// getRepos fetches repositories for the configured project and applies include/exclude filters.
 func (c *MSDevOpsClient) getRepos(cfg config.Config) ([]git.GitRepository, error) {
 	logger.Debug("Fetching list of repositories ⏳")
 	ctx := context.Background()
@@ -149,25 +171,30 @@ func (c *MSDevOpsClient) getRepos(cfg config.Config) ([]git.GitRepository, error
 		}
 	}
 
-	// Apply filtering logic
 	var reposToInclude []git.GitRepository
 	for _, repo := range allRepos {
+		// Guard: Project pointer may be nil for orphaned or migrating repositories.
+		if repo.Project == nil {
+			logger.Warnf("Skipping repository %q — missing project reference", derefString(repo.Name))
+			continue
+		}
+
 		repoName := derefString(repo.Name)
 		projectName := derefString(repo.Project.Name)
 
-		// Skip if essential fields are missing
 		if projectName == "" || repoName == "" {
 			logger.Warnf("Skipping repository with missing required fields: project=%q, name=%q", projectName, repoName)
 			continue
 		}
 
-		// Check if repository is disabled (handle nil pointer safely)
 		if repo.IsDisabled != nil && *repo.IsDisabled {
-			logger.Warnf("Skipping repo %s/%s as it is disabled", projectName, repoName)
+			logger.Warnf("Skipping repo %s/%s — repository is disabled", projectName, repoName)
 			continue
 		}
 
-		// Check include/exclude organizations (projects in Azure DevOps)
+		// include_orgs / exclude_orgs filter by Azure DevOps *project* name.
+		// In ADO the organisation is the account-level entity (server.organization);
+		// projects are the sub-containers, analogous to GitHub orgs or GitLab groups.
 		if len(cfg.IncludeOrgs) > 0 {
 			if helpers.IsIncludedInList(cfg.IncludeOrgs, projectName) {
 				logger.Debug("[include_orgs] Repo included: ", repoName)
@@ -183,7 +210,6 @@ func (c *MSDevOpsClient) getRepos(cfg config.Config) ([]git.GitRepository, error
 			}
 		}
 
-		// Check include/exclude repositories
 		if len(cfg.IncludeRepos) > 0 {
 			if helpers.IsIncludedInList(cfg.IncludeRepos, repoName) {
 				logger.Debug("[include_repos] Repo included: ", repoName)
@@ -199,10 +225,8 @@ func (c *MSDevOpsClient) getRepos(cfg config.Config) ([]git.GitRepository, error
 			}
 		}
 
-		// Check fork inclusion
-		// Note: Azure DevOps doesn't have a direct fork concept like GitHub,
-		// but we can check if the repository is a fork by checking the parent repository reference
-		isFork := repo.ParentRepository != nil
+		// IsFork is the authoritative SDK field for fork detection.
+		isFork := repo.IsFork != nil && *repo.IsFork
 		if !cfg.IncludeForks && isFork {
 			logger.Debug("[include_forks] Repo excluded: ", repoName)
 			continue
@@ -215,10 +239,10 @@ func (c *MSDevOpsClient) getRepos(cfg config.Config) ([]git.GitRepository, error
 	return reposToInclude, nil
 }
 
-// getUserRepos fetches all accessible repositories for the authenticated user.
+// getUserRepos calls the Azure DevOps REST API to list all repositories in the configured project.
 func (c *MSDevOpsClient) getUserRepos(ctx context.Context, client git.Client, cfg config.Config) ([]git.GitRepository, error) {
 	allRepos, err := client.GetRepositories(ctx, git.GetRepositoriesArgs{
-		Project: &cfg.Workspace, // Use the workspace from the config
+		Project: &cfg.Workspace,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch repositories: %w", err)
@@ -230,4 +254,3 @@ func (c *MSDevOpsClient) getUserRepos(ctx context.Context, client git.Client, cf
 
 	return *allRepos, nil
 }
-
