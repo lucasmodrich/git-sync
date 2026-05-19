@@ -147,21 +147,22 @@ func (c *MSDevOpsClient) getRepos(cfg config.Config) ([]git.GitRepository, error
 		return nil, fmt.Errorf("failed to create Azure DevOps client: %w", err)
 	}
 
-	// Get all repositories with retry logic for token rotation
+	const maxTokenRetries = 3
 	var allRepos []git.GitRepository
-	for {
+	for attempt := 1; attempt <= maxTokenRetries; attempt++ {
 		repos, err := c.getUserRepos(ctx, client, cfg)
-		if err != nil {
-			logger.Debugf("Error with current token, trying next token: %v", err)
-			// Create a new client with the next token
-			client, err = c.createClient(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create Azure DevOps client with new token: %w", err)
-			}
-			continue
+		if err == nil {
+			allRepos = repos
+			break
 		}
-		allRepos = repos
-		break
+		if attempt == maxTokenRetries {
+			return nil, fmt.Errorf("failed to list repositories after %d token attempts: %w", maxTokenRetries, err)
+		}
+		logger.Debugf("Error with current token, trying next token (attempt %d/%d): %v", attempt, maxTokenRetries, err)
+		client, err = c.createClient(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Azure DevOps client with new token: %w", err)
+		}
 	}
 
 	// Apply filtering logic

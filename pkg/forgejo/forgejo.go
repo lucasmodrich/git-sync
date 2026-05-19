@@ -74,16 +74,23 @@ func (c *ForgejoClient) getUserRepos(cfg config.Config) ([]*fg.Repository, error
 		PageSize: 100,
 	}
 
+	const maxTokenRetries = 3
+	tokenRetries := 0
 	for {
 		repos, resp, err := client.ListMyRepos(fg.ListReposOptions{ListOptions: pageOpt})
 		if err != nil {
-			logger.Debugf("Error with current token, trying next token: %v", err)
+			tokenRetries++
+			if tokenRetries >= maxTokenRetries {
+				return nil, fmt.Errorf("failed to list repositories after %d token attempts: %w", maxTokenRetries, err)
+			}
+			logger.Debugf("Error with current token, trying next token (attempt %d/%d): %v", tokenRetries, maxTokenRetries, err)
 			client, err = c.createClient()
 			if err != nil {
 				return nil, err
 			}
 			continue
 		}
+		tokenRetries = 0
 
 		var reposToInclude []*fg.Repository
 		for _, repo := range repos {

@@ -88,19 +88,26 @@ func (c *GitlabClient) getProjects(cfg config.Config) ([]*gl.Project, error) {
 		Owned: &[]bool{true}[0],
 	}
 
+	const maxTokenRetries = 3
+	tokenRetries := 0
 	options := []gl.RequestOptionFunc{}
 	var projects []*gl.Project
 	for {
 		pageResults, response, err := client.Projects.ListProjects(requestOpts, options...)
 
 		if err != nil {
-			logger.Debugf("Error with current token, trying next token: %v", err)
+			tokenRetries++
+			if tokenRetries >= maxTokenRetries {
+				return nil, fmt.Errorf("failed to list projects after %d token attempts: %w", maxTokenRetries, err)
+			}
+			logger.Debugf("Error with current token, trying next token (attempt %d/%d): %v", tokenRetries, maxTokenRetries, err)
 			client, err = c.createClient()
 			if err != nil {
 				return nil, err
 			}
 			continue
 		}
+		tokenRetries = 0
 
 		projects = append(projects, pageResults...)
 

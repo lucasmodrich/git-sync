@@ -82,14 +82,21 @@ func (c *GitHubClient) getRepos(cfg config.Config) ([]*gh.Repository, error) {
 		ListOptions: gh.ListOptions{PerPage: 100},
 	}
 
+	const maxTokenRetries = 3
+	tokenRetries := 0
 	var allRepos []*gh.Repository
 	for {
 		repos, resp, err := client.Repositories.ListByAuthenticatedUser(ctx, opt)
 		if err != nil {
-			logger.Debugf("Error with current token, trying next token: %v", err)
+			tokenRetries++
+			if tokenRetries >= maxTokenRetries {
+				return nil, fmt.Errorf("failed to list repositories after %d token attempts: %w", maxTokenRetries, err)
+			}
+			logger.Debugf("Error with current token, trying next token (attempt %d/%d): %v", tokenRetries, maxTokenRetries, err)
 			client = c.createClient()
 			continue
 		}
+		tokenRetries = 0
 
 		for _, repo := range repos {
 			repoName := repo.GetName()

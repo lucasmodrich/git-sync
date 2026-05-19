@@ -3,6 +3,9 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	"github.com/AkashRajpurohit/git-sync/pkg/bitbucket"
 	"github.com/AkashRajpurohit/git-sync/pkg/client"
@@ -118,24 +121,29 @@ var rootCmd = &cobra.Command{
 		}
 
 		if cfg.Cron != "" {
-			c := ch.New()
-			_, err := c.AddFunc(cfg.Cron, func() {
-				// First sync platform repositories if configured
+			var syncMu sync.Mutex
+			runSync := func() {
+				if !syncMu.TryLock() {
+					logger.Warn("Previous sync still running, skipping this cron tick")
+					return
+				}
+				defer syncMu.Unlock()
+
 				if platformClient != nil {
 					if err := platformClient.Sync(cfg); err != nil {
 						logger.Errorf("Error syncing platform repositories: %s", err)
 					}
 				}
-
-				// Then sync raw git URLs if any
 				if hasRawURLs {
 					rawClient := raw.NewRawClient()
 					if err := rawClient.Sync(cfg); err != nil {
 						logger.Errorf("Error syncing raw repositories: %s", err)
 					}
 				}
-			})
+			}
 
+			c := ch.New()
+			_, err := c.AddFunc(cfg.Cron, runSync)
 			if err != nil {
 				logger.Fatalf("Error adding cron job: %s", err)
 			}
@@ -143,8 +151,13 @@ var rootCmd = &cobra.Command{
 			c.Start()
 			logger.Infof("Cron job scheduled to run at: %s", cfg.Cron)
 
-			// Wait indefinitely
-			select {}
+			quit := make(chan os.Signal, 1)
+			signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+			<-quit
+			logger.Info("Shutdown signal received, stopping cron scheduler...")
+			ctx := c.Stop()
+			<-ctx.Done()
+			logger.Info("Cron scheduler stopped")
 		} else {
 			// First sync platform repositories if configured
 			if platformClient != nil {
