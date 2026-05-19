@@ -1,6 +1,7 @@
 package raw
 
 import (
+	"context"
 	"path/filepath"
 	"strings"
 
@@ -28,7 +29,7 @@ func (c RawClient) extractRepoInfo(url string) (string, string) {
 	return parts[len(parts)-2], parts[len(parts)-1]
 }
 
-func (c RawClient) Sync(cfg config.Config) error {
+func (c RawClient) Sync(_ context.Context, cfg config.Config) error {
 	if len(cfg.RawGitURLs) == 0 {
 		return nil
 	}

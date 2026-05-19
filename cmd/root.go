@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -120,30 +121,37 @@ var rootCmd = &cobra.Command{
 			logger.Infof("Found %d raw git URLs to sync", len(cfg.RawGitURLs))
 		}
 
+		// rootCtx is cancelled when a shutdown signal is received; API calls respect it.
+		// Note: git subprocess cancellation is not implemented — running git operations
+		// complete normally after shutdown is signalled.
+		rootCtx, cancelRoot := context.WithCancel(context.Background())
+		defer cancelRoot()
+
+		runSync := func(ctx context.Context) {
+			if platformClient != nil {
+				if err := platformClient.Sync(ctx, cfg); err != nil {
+					logger.Errorf("Error syncing platform repositories: %s", err)
+				}
+			}
+			if hasRawURLs {
+				rawClient := raw.NewRawClient()
+				if err := rawClient.Sync(ctx, cfg); err != nil {
+					logger.Errorf("Error syncing raw repositories: %s", err)
+				}
+			}
+		}
+
 		if cfg.Cron != "" {
 			var syncMu sync.Mutex
-			runSync := func() {
+			c := ch.New()
+			_, err := c.AddFunc(cfg.Cron, func() {
 				if !syncMu.TryLock() {
 					logger.Warn("Previous sync still running, skipping this cron tick")
 					return
 				}
 				defer syncMu.Unlock()
-
-				if platformClient != nil {
-					if err := platformClient.Sync(cfg); err != nil {
-						logger.Errorf("Error syncing platform repositories: %s", err)
-					}
-				}
-				if hasRawURLs {
-					rawClient := raw.NewRawClient()
-					if err := rawClient.Sync(cfg); err != nil {
-						logger.Errorf("Error syncing raw repositories: %s", err)
-					}
-				}
-			}
-
-			c := ch.New()
-			_, err := c.AddFunc(cfg.Cron, runSync)
+				runSync(rootCtx)
+			})
 			if err != nil {
 				logger.Fatalf("Error adding cron job: %s", err)
 			}
@@ -154,25 +162,13 @@ var rootCmd = &cobra.Command{
 			quit := make(chan os.Signal, 1)
 			signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 			<-quit
+			cancelRoot()
 			logger.Info("Shutdown signal received, stopping cron scheduler...")
-			ctx := c.Stop()
-			<-ctx.Done()
+			cronCtx := c.Stop()
+			<-cronCtx.Done()
 			logger.Info("Cron scheduler stopped")
 		} else {
-			// First sync platform repositories if configured
-			if platformClient != nil {
-				if err := platformClient.Sync(cfg); err != nil {
-					logger.Errorf("Error syncing platform repositories: %s", err)
-				}
-			}
-
-			// Then sync raw git URLs if any
-			if hasRawURLs {
-				rawClient := raw.NewRawClient()
-				if err := rawClient.Sync(cfg); err != nil {
-					logger.Errorf("Error syncing raw repositories: %s", err)
-				}
-			}
+			runSync(rootCtx)
 		}
 	},
 }

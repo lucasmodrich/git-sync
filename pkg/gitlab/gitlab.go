@@ -1,6 +1,7 @@
 package gitlab
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -38,7 +39,7 @@ func (c *GitlabClient) createClient() (*gl.Client, error) {
 	return client, nil
 }
 
-func (c *GitlabClient) Sync(cfg config.Config) error {
+func (c *GitlabClient) Sync(ctx context.Context, cfg config.Config) error {
 	projects, err := c.getProjects(cfg)
 	if err != nil {
 		return err

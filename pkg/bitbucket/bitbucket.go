@@ -1,6 +1,7 @@
 package bitbucket
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
@@ -31,7 +32,7 @@ func (c *BitbucketClient) createClient() *bb.Client {
 	return bb.NewBasicAuth(c.username, c.tokenManager.GetNextToken())
 }
 
-func (c *BitbucketClient) Sync(cfg config.Config) error {
+func (c *BitbucketClient) Sync(_ context.Context, cfg config.Config) error {
 	repos, err := c.getRepos(cfg)
 	if err != nil {
 		return err

@@ -1,6 +1,7 @@
 package forgejo
 
 import (
+	"context"
 	"fmt"
 
 	fg "codeberg.org/mvdkleijn/forgejo-sdk/forgejo"
@@ -37,7 +38,7 @@ func (c *ForgejoClient) createClient() (*fg.Client, error) {
 	return client, nil
 }
 
-func (c *ForgejoClient) Sync(cfg config.Config) error {
+func (c *ForgejoClient) Sync(_ context.Context, cfg config.Config) error {
 	repos, err := c.getUserRepos(cfg)
 	if err != nil {
 		return err

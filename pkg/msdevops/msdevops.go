@@ -100,7 +100,7 @@ func buildRepoAuthURL(rawURL, pat string) (string, error) {
 }
 
 // Sync synchronizes all accessible Azure DevOps repositories for the configured project.
-func (c *MSDevOpsClient) Sync(cfg config.Config) error {
+func (c *MSDevOpsClient) Sync(_ context.Context, cfg config.Config) error {
 	repos, err := c.getRepos(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to get repositories: %w", err)

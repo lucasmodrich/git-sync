@@ -40,8 +40,8 @@ func (c *GitHubClient) createClient() *gh.Client {
 	return gh.NewClient(tc)
 }
 
-func (c *GitHubClient) Sync(cfg config.Config) error {
-	repos, err := c.getRepos(cfg)
+func (c *GitHubClient) Sync(ctx context.Context, cfg config.Config) error {
+	repos, err := c.getRepos(ctx, cfg)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (c *GitHubClient) Sync(cfg config.Config) error {
 		}
 		if cfg.IncludeIssues && repo.GetHasIssues() {
 			since, hasPrevSync := issues.ReadLastSyncTime(cfg.BackupDir, owner, repoName)
-			allIssues, err := c.fetchIssues(owner, repoName, since, hasPrevSync)
+			allIssues, err := c.fetchIssues(ctx, owner, repoName, since, hasPrevSync)
 			if err != nil {
 				logger.Errorf("Failed to fetch issues for %s/%s: %v", owner, repoName, err)
 			} else {
@@ -74,9 +74,8 @@ func (c *GitHubClient) Sync(cfg config.Config) error {
 	return nil
 }
 
-func (c *GitHubClient) getRepos(cfg config.Config) ([]*gh.Repository, error) {
+func (c *GitHubClient) getRepos(ctx context.Context, cfg config.Config) ([]*gh.Repository, error) {
 	logger.Debug("Fetching list of repositories ⏳")
-	ctx := context.Background()
 	client := c.createClient()
 	opt := &gh.RepositoryListByAuthenticatedUserOptions{
 		ListOptions: gh.ListOptions{PerPage: 100},
@@ -152,9 +151,8 @@ func (c *GitHubClient) getRepos(cfg config.Config) ([]*gh.Repository, error) {
 	return allRepos, nil
 }
 
-func (c *GitHubClient) fetchIssues(owner, repo string, since time.Time, incremental bool) ([]issues.Issue, error) {
+func (c *GitHubClient) fetchIssues(ctx context.Context, owner, repo string, since time.Time, incremental bool) ([]issues.Issue, error) {
 	repoFullName := fmt.Sprintf("%s/%s", owner, repo)
-	ctx := context.Background()
 	client := c.createClient()
 
 	opt := &gh.IssueListByRepoOptions{
