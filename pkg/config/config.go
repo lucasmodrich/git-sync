@@ -82,8 +82,17 @@ func expandPath(path string) string {
 	return path
 }
 
+func homeDir() string {
+	h, err := os.UserHomeDir()
+	if err != nil {
+		logger.Warnf("Could not resolve home directory: %v", err)
+		return ""
+	}
+	return h
+}
+
 func GetDefaultConfigDir() string {
-	return filepath.Join(os.Getenv("HOME"), ".config", "git-sync")
+	return filepath.Join(homeDir(), ".config", "git-sync")
 }
 
 func GetConfigFile(cfgFile string) string {
@@ -97,9 +106,9 @@ func GetConfigFile(cfgFile string) string {
 		return expandPath(os.Getenv("GIT_SYNC_CONFIG_FILE"))
 	}
 
-	defaultConfigFilePath := filepath.Join(os.Getenv("HOME"), ".config", "git-sync", "config.yaml")
+	defaultConfigFilePath := filepath.Join(homeDir(), ".config", "git-sync", "config.yaml")
 	logger.Debug("Using default config file: ", defaultConfigFilePath)
-	return expandPath(defaultConfigFilePath)
+	return defaultConfigFilePath
 }
 
 func GetBackupDir(backupDir string) string {
@@ -113,9 +122,9 @@ func GetBackupDir(backupDir string) string {
 		return expandPath(os.Getenv("GIT_SYNC_BACKUP_DIR"))
 	}
 
-	defaultBackupDir := filepath.Join(os.Getenv("HOME"), "git-backups")
+	defaultBackupDir := filepath.Join(homeDir(), "git-backups")
 	logger.Debug("Using default backup directory: ", defaultBackupDir)
-	return expandPath(defaultBackupDir)
+	return defaultBackupDir
 }
 
 func LoadConfig(cfgFile string) (Config, error) {

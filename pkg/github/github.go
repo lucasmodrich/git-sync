@@ -224,8 +224,11 @@ func (c *GitHubClient) fetchIssues(owner, repo string, since time.Time, incremen
 	return allIssues, nil
 }
 
-// fetchAllComments bulk-fetches all comments for the repo (issue number 0)
-// instead of making a separate API call per issue.
+// fetchAllComments bulk-fetches all issue comments for the repo in a single
+// paginated sweep rather than one API call per issue. This trades memory for
+// fewer round-trips and is only used on full (non-incremental) syncs.
+// For very large repositories (10k+ comments) consider switching to per-issue
+// fetching via fetchIssueComments to cap peak memory usage.
 func (c *GitHubClient) fetchAllComments(ctx context.Context, owner, repo string) (map[int][]issues.Comment, error) {
 	client := c.createClient()
 	opt := &gh.IssueListCommentsOptions{

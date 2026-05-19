@@ -69,8 +69,9 @@ func ValidateConfig(cfg Config) error {
 
 	// If there are no raw git URLs, validate platform-specific configuration
 	if len(cfg.RawGitURLs) == 0 {
-		// Username is required for platform-specific sync
-		if cfg.Username == "" {
+		// Username is required for all platforms except msdevops, which authenticates
+		// using a PAT embedded in the clone URL with no username component.
+		if cfg.Username == "" && cfg.Platform != "msdevops" {
 			return fmt.Errorf("username cannot be empty when no raw git URLs are provided")
 		}
 
