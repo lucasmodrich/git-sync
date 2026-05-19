@@ -5,7 +5,7 @@ package msdevops
 import (
 	"context"
 	"fmt"
-	"strings"
+	"net/url"
 
 	"github.com/AkashRajpurohit/git-sync/pkg/config"
 	"github.com/AkashRajpurohit/git-sync/pkg/helpers"
@@ -35,28 +35,6 @@ func (c *MSDevOpsClient) GetTokenManager() *token.Manager {
 	return c.tokenManager
 }
 
-// maskToken masks the token in a URL for safe logging.
-func maskToken(url string) string {
-	// Find the token part (between :// and @)
-	atIndex := strings.Index(url, "@")
-	if atIndex == -1 {
-		return url
-	}
-
-	protocolEnd := strings.Index(url, "://")
-	if protocolEnd == -1 {
-		return url
-	}
-
-	// If there's content between protocol and @, it's likely a token
-	if atIndex > protocolEnd+3 {
-		// Mask everything between protocol and @
-		return url[:protocolEnd+3] + "****" + url[atIndex:]
-	}
-
-	return url
-}
-
 // createConnection creates a new Azure DevOps connection using the provided token manager and server configuration.
 func (c *MSDevOpsClient) createConnection() (*azuredevops.Connection, error) {
 	if c.serverConfig.Protocol == "" || c.serverConfig.Domain == "" {
@@ -64,7 +42,7 @@ func (c *MSDevOpsClient) createConnection() (*azuredevops.Connection, error) {
 	}
 
 	organizationURL := fmt.Sprintf("%s://%s", c.serverConfig.Protocol, c.serverConfig.Domain)
-	logger.Debugf("Creating Azure DevOps connection for: %s", maskToken(organizationURL))
+	logger.Debugf("Creating Azure DevOps connection for: %s", organizationURL)
 
 	token := c.tokenManager.GetNextToken()
 	if token == "" {
@@ -114,6 +92,21 @@ func derefString(ref *string) string {
 	return *ref
 }
 
+// buildRepoAuthURL injects a PAT into an Azure DevOps remote URL using net/url so
+// the token is correctly percent-encoded and the URL structure is never corrupted.
+// Azure DevOps PAT auth uses an empty username with the token as the password.
+func buildRepoAuthURL(rawURL, pat string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", fmt.Errorf("invalid repository URL %q: %w", rawURL, err)
+	}
+	if u.Scheme == "" || u.Host == "" {
+		return "", fmt.Errorf("repository URL missing scheme or host: %q", rawURL)
+	}
+	u.User = url.UserPassword("", pat)
+	return u.String(), nil
+}
+
 // Sync synchronizes all accessible Azure DevOps repositories based on the provided configuration.
 func (c *MSDevOpsClient) Sync(cfg config.Config) error {
 	repos, err := c.getRepos(cfg)
@@ -126,19 +119,18 @@ func (c *MSDevOpsClient) Sync(cfg config.Config) error {
 	gitSync.SyncWithConcurrency(cfg, repos, func(repo git.GitRepository) {
 		repoOwner := derefString(repo.Project.Name)
 		repoName := derefString(repo.Name)
-		repoURL := derefString(repo.WebUrl)
-		protoLen := len(cfg.Server.Protocol + "://")
+		webURL := derefString(repo.RemoteUrl)
+		if webURL == "" {
+			webURL = derefString(repo.WebUrl)
+		}
 
-		// Need to manually construct the repo URL by inserting the user token into the URL
-		repoAuthURL := repoURL[:protoLen] + c.tokenManager.GetNextToken() + "@" + repoURL[protoLen:]
+		authURL, err := buildRepoAuthURL(webURL, c.tokenManager.GetNextToken())
+		if err != nil {
+			logger.Errorf("Failed to build auth URL for %s/%s: %v", repoOwner, repoName, err)
+			return
+		}
 
-		gitSync.CloneOrUpdateRawRepo(repoOwner, repoName, repoAuthURL, cfg)
-		/*
-			// Check if wiki synchronization is enabled
-			if cfg.IncludeWiki {
-				c.syncWiki(repo, cfg)
-			}
-		*/
+		gitSync.CloneOrUpdateRawRepo(repoOwner, repoName, authURL, cfg)
 	})
 
 	gitSync.LogSyncSummary(&cfg)

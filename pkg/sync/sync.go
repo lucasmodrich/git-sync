@@ -2,6 +2,7 @@ package sync
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,44 +24,46 @@ func getBaseDirectoryPath(repoOwner, repoName string, config config.Config) stri
 	return filepath.Join(config.BackupDir, repoOwner, repoName)
 }
 
-func getGitCloneCommand(CloneType, repoPath, repoURL string) *exec.Cmd {
-	switch CloneType {
+func getGitCloneCommand(cloneType, repoPath, repoURL string) *exec.Cmd {
+	switch cloneType {
 	case "bare":
-		logger.Debugf("Cloning repo with bare clone type: %s", repoURL)
 		return exec.Command("git", "clone", "--bare", repoURL, repoPath)
 	case "full":
-		logger.Debugf("Cloning repo with full clone type: %s", repoURL)
 		return exec.Command("git", "clone", repoURL, repoPath)
 	case "mirror":
-		logger.Debugf("Cloning repo with mirror clone type: %s", repoURL)
 		return exec.Command("git", "clone", "--mirror", repoURL, repoPath)
 	case "shallow":
-		logger.Debugf("Cloning repo with shallow clone type: %s", repoURL)
 		return exec.Command("git", "clone", "--depth", "1", repoURL, repoPath)
 	default:
-		logger.Debugf("[Default] Cloning repo with bare clone type: %s", repoURL)
 		return exec.Command("git", "clone", "--bare", repoURL, repoPath)
 	}
 }
 
-func getGitFetchCommand(CloneType, repoPath, repoURL string) *exec.Cmd {
-	switch CloneType {
+func getGitFetchCommand(cloneType, repoPath, repoURL string) *exec.Cmd {
+	switch cloneType {
 	case "bare":
-		logger.Debugf("Updating repo with bare clone type: %s", repoPath)
 		return exec.Command("git", "--git-dir", repoPath, "fetch", "--prune", repoURL, "+*:*")
 	case "full":
-		logger.Debugf("Updating repo with full clone type: %s", repoPath)
 		return exec.Command("git", "-C", repoPath, "pull", "--prune", repoURL)
 	case "mirror":
-		logger.Debugf("Updating repo with mirror clone type: %s", repoPath)
 		return exec.Command("git", "-C", repoPath, "fetch", "--prune", repoURL, "+*:*")
 	case "shallow":
-		logger.Debugf("Updating repo with shallow clone type: %s", repoPath)
 		return exec.Command("git", "-C", repoPath, "pull", "--prune", repoURL)
 	default:
-		logger.Debugf("[Default] Updating repo with bare clone type: %s", repoPath)
 		return exec.Command("git", "--git-dir", repoPath, "fetch", "--prune", repoURL, "+*:*")
 	}
+}
+
+// buildAuthURL constructs a credential-embedded clone URL and a redacted
+// variant safe for logging. username and password are URL-encoded by net/url.
+func buildAuthURL(scheme, host, path, username, password string) (authURL, safeURL string) {
+	u := &url.URL{
+		Scheme: scheme,
+		User:   url.UserPassword(username, password),
+		Host:   host,
+		Path:   path,
+	}
+	return u.String(), u.Redacted()
 }
 
 func CloneOrUpdateRepo(repoOwner, repoName string, config config.Config) {
@@ -69,16 +72,24 @@ func CloneOrUpdateRepo(repoOwner, repoName string, config config.Config) {
 	}
 
 	repoFullName := fmt.Sprintf("%s/%s", repoOwner, repoName)
-	repoURL := fmt.Sprintf("%s://%s:%s@%s/%s.git", config.Server.Protocol, config.Username, tokenManager.GetNextToken(), config.Server.Domain, repoFullName)
 	repoPath := filepath.Join(getBaseDirectoryPath(repoOwner, repoName, config), repoName+".git")
+	authURL, safeURL := buildAuthURL(
+		config.Server.Protocol,
+		config.Server.Domain,
+		"/"+repoFullName+".git",
+		config.Username,
+		tokenManager.GetNextToken(),
+	)
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		logger.Info("Cloning repo: ", repoFullName)
+		logger.Infof("Cloning repo: %s", safeURL)
 
 		err := retryOperation(config, func() error {
-			command := getGitCloneCommand(config.CloneType, repoPath, repoURL)
+			command := getGitCloneCommand(config.CloneType, repoPath, authURL)
 			output, err := command.CombinedOutput()
-			logger.Debugf("Output: %s\n", output)
+			if err != nil {
+				logger.Debugf("git clone output: %s", output)
+			}
 			return err
 		}, fmt.Sprintf("clone %s", repoFullName))
 
@@ -94,9 +105,11 @@ func CloneOrUpdateRepo(repoOwner, repoName string, config config.Config) {
 		logger.Info("Updating repo: ", repoFullName)
 
 		err := retryOperation(config, func() error {
-			command := getGitFetchCommand(config.CloneType, repoPath, repoURL)
+			command := getGitFetchCommand(config.CloneType, repoPath, authURL)
 			output, err := command.CombinedOutput()
-			logger.Debugf("Output: %s\n", output)
+			if err != nil {
+				logger.Debugf("git fetch output: %s", output)
+			}
 			return err
 		}, fmt.Sprintf("update %s", repoFullName))
 
@@ -113,42 +126,47 @@ func CloneOrUpdateRepo(repoOwner, repoName string, config config.Config) {
 
 func CloneOrUpdateRawRepo(repoOwner, repoName, repoURL string, config config.Config) {
 	repoPath := filepath.Join(getBaseDirectoryPath(repoOwner, repoName, config), repoName+".git")
+	repoLabel := fmt.Sprintf("%s/%s", repoOwner, repoName)
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
-		logger.Info("Cloning raw repo: ", repoURL)
+		logger.Infof("Cloning raw repo: %s", repoLabel)
 
 		err := retryOperation(config, func() error {
 			command := getGitCloneCommand(config.CloneType, repoPath, repoURL)
 			output, err := command.CombinedOutput()
-			logger.Debugf("Output: %s\n", output)
+			if err != nil {
+				logger.Debugf("git clone output: %s", output)
+			}
 			return err
-		}, fmt.Sprintf("clone %s", repoURL))
+		}, fmt.Sprintf("clone %s", repoLabel))
 
 		if err != nil {
-			logger.Errorf("Failed to clone raw repo %s: %v", repoURL, err)
-			recordRepoFailure(repoURL, err)
+			logger.Errorf("Failed to clone raw repo %s: %v", repoLabel, err)
+			recordRepoFailure(repoLabel, err)
 			return
 		}
 
-		logger.Info("Cloned raw repo: ", repoURL)
+		logger.Infof("Cloned raw repo: %s", repoLabel)
 		recordRepoSuccess()
 	} else {
-		logger.Info("Updating raw repo: ", repoURL)
+		logger.Infof("Updating raw repo: %s", repoLabel)
 
 		err := retryOperation(config, func() error {
 			command := getGitFetchCommand(config.CloneType, repoPath, repoURL)
 			output, err := command.CombinedOutput()
-			logger.Debugf("Output: %s\n", output)
+			if err != nil {
+				logger.Debugf("git fetch output: %s", output)
+			}
 			return err
-		}, fmt.Sprintf("update %s", repoURL))
+		}, fmt.Sprintf("update %s", repoLabel))
 
 		if err != nil {
-			logger.Errorf("Failed to update raw repo %s: %v", repoURL, err)
-			recordRepoFailure(repoURL, err)
+			logger.Errorf("Failed to update raw repo %s: %v", repoLabel, err)
+			recordRepoFailure(repoLabel, err)
 			return
 		}
 
-		logger.Info("Updated raw repo: ", repoURL)
+		logger.Infof("Updated raw repo: %s", repoLabel)
 		recordRepoSuccess()
 	}
 }
@@ -159,14 +177,15 @@ func SyncWiki(repoOwner, repoName string, config config.Config) {
 	}
 
 	repoFullName := fmt.Sprintf("%s/%s", repoOwner, repoName)
-	repoWikiURL := fmt.Sprintf("%s://%s:%s@%s/%s.wiki.git", config.Server.Protocol, config.Username, tokenManager.GetNextToken(), config.Server.Domain, repoFullName)
 	repoWikiPath := filepath.Join(getBaseDirectoryPath(repoOwner, repoName, config), repoName+".wiki.git")
 
-	// Special handling for bitbucket since it does not follow the traditional pattern for wiki repos
-	// @see here: https://support.atlassian.com/bitbucket-cloud/docs/clone-a-wiki/
+	wikiPath := "/" + repoFullName + ".wiki.git"
 	if config.Platform == "bitbucket" {
-		repoWikiURL = fmt.Sprintf("%s://%s:%s@%s/%s.git/wiki", config.Server.Protocol, config.Username, tokenManager.GetNextToken(), config.Server.Domain, repoFullName)
+		// Bitbucket wiki repos use a different URL pattern:
+		// https://support.atlassian.com/bitbucket-cloud/docs/clone-a-wiki/
+		wikiPath = "/" + repoFullName + ".git/wiki"
 	}
+	repoWikiURL, _ := buildAuthURL(config.Server.Protocol, config.Server.Domain, wikiPath, config.Username, tokenManager.GetNextToken())
 
 	if _, err := os.Stat(repoWikiPath); os.IsNotExist(err) {
 		logger.Info("Cloning wiki: ", repoFullName)
