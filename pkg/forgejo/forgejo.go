@@ -39,7 +39,7 @@ func (c *ForgejoClient) createClient() (*fg.Client, error) {
 	return client, nil
 }
 
-func (c *ForgejoClient) Sync(_ context.Context, cfg config.Config) error {
+func (c *ForgejoClient) Sync(ctx context.Context, cfg config.Config) error {
 	repos, err := c.getUserRepos(cfg)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (c *ForgejoClient) Sync(_ context.Context, cfg config.Config) error {
 
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
-	gitSync.SyncWithConcurrency(cfg, repos, func(repo *fg.Repository) {
+	gitSync.SyncWithConcurrency(ctx, cfg, repos, func(repo *fg.Repository) {
 		owner := repo.Owner.UserName
 		name := repo.Name
 
@@ -67,11 +67,11 @@ func (c *ForgejoClient) Sync(_ context.Context, cfg config.Config) error {
 		}
 
 		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+name+".git", cfg.Username, c.tokenManager.GetNextToken())
-		gitSync.CloneOrUpdateRepo(owner, name, repoAuthURL, cfg)
+		gitSync.CloneOrUpdateRepo(ctx, owner, name, repoAuthURL, cfg)
 
 		if cfg.IncludeWiki && repo.HasWiki {
 			wikiAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+name+".wiki.git", cfg.Username, c.tokenManager.GetNextToken())
-			gitSync.SyncWiki(owner, name, wikiAuthURL, cfg)
+			gitSync.SyncWiki(ctx, owner, name, wikiAuthURL, cfg)
 		}
 	})
 

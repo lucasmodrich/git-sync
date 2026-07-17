@@ -1,6 +1,7 @@
 package sync
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"os"
@@ -23,33 +24,33 @@ func GetRepoPath(repoOwner, repoName string, cfg config.Config) string {
 	return filepath.Join(getBaseDirectoryPath(repoOwner, repoName, cfg), repoName+".git")
 }
 
-func getGitCloneCommand(cloneType, repoPath, repoURL string) *exec.Cmd {
+func getGitCloneCommand(ctx context.Context, cloneType, repoPath, repoURL string) *exec.Cmd {
 	switch cloneType {
 	case "bare":
-		return exec.Command("git", "clone", "--bare", repoURL, repoPath)
+		return newGitCommand(ctx, "clone", "--bare", repoURL, repoPath)
 	case "full":
-		return exec.Command("git", "clone", repoURL, repoPath)
+		return newGitCommand(ctx, "clone", repoURL, repoPath)
 	case "mirror":
-		return exec.Command("git", "clone", "--mirror", repoURL, repoPath)
+		return newGitCommand(ctx, "clone", "--mirror", repoURL, repoPath)
 	case "shallow":
-		return exec.Command("git", "clone", "--depth", "1", repoURL, repoPath)
+		return newGitCommand(ctx, "clone", "--depth", "1", repoURL, repoPath)
 	default:
-		return exec.Command("git", "clone", "--bare", repoURL, repoPath)
+		return newGitCommand(ctx, "clone", "--bare", repoURL, repoPath)
 	}
 }
 
-func getGitFetchCommand(cloneType, repoPath, repoURL string) *exec.Cmd {
+func getGitFetchCommand(ctx context.Context, cloneType, repoPath, repoURL string) *exec.Cmd {
 	switch cloneType {
 	case "bare":
-		return exec.Command("git", "--git-dir", repoPath, "fetch", "--prune", repoURL, "+*:*")
+		return newGitCommand(ctx, "--git-dir", repoPath, "fetch", "--prune", repoURL, "+*:*")
 	case "full":
-		return exec.Command("git", "-C", repoPath, "pull", "--prune", repoURL)
+		return newGitCommand(ctx, "-C", repoPath, "pull", "--prune", repoURL)
 	case "mirror":
-		return exec.Command("git", "-C", repoPath, "fetch", "--prune", repoURL, "+*:*")
+		return newGitCommand(ctx, "-C", repoPath, "fetch", "--prune", repoURL, "+*:*")
 	case "shallow":
-		return exec.Command("git", "-C", repoPath, "pull", "--prune", repoURL)
+		return newGitCommand(ctx, "-C", repoPath, "pull", "--prune", repoURL)
 	default:
-		return exec.Command("git", "--git-dir", repoPath, "fetch", "--prune", repoURL, "+*:*")
+		return newGitCommand(ctx, "--git-dir", repoPath, "fetch", "--prune", repoURL, "+*:*")
 	}
 }
 
@@ -67,8 +68,9 @@ func BuildAuthURL(scheme, host, path, username, password string) (authURL, safeU
 
 // CloneOrUpdateRepo clones or updates a platform-hosted repository.
 // authURL must be a fully-formed authenticated clone URL built by the caller
-// (use BuildAuthURL); it is never logged directly.
-func CloneOrUpdateRepo(repoOwner, repoName, authURL string, config config.Config) {
+// (use BuildAuthURL); it is never logged directly. ctx bounds both shutdown
+// cancellation and, via cfg.Timeout, each individual clone/fetch attempt.
+func CloneOrUpdateRepo(ctx context.Context, repoOwner, repoName, authURL string, config config.Config) {
 	repoFullName := fmt.Sprintf("%s/%s", repoOwner, repoName)
 	repoPath := filepath.Join(getBaseDirectoryPath(repoOwner, repoName, config), repoName+".git")
 
@@ -80,8 +82,8 @@ func CloneOrUpdateRepo(repoOwner, repoName, authURL string, config config.Config
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		logger.Infof("Cloning repo: %s", safeURL)
 
-		err := retryOperation(config, func() error {
-			command := getGitCloneCommand(config.CloneType, repoPath, authURL)
+		err := retryOperation(ctx, config, func(attemptCtx context.Context) error {
+			command := getGitCloneCommand(attemptCtx, config.CloneType, repoPath, authURL)
 			output, err := command.CombinedOutput()
 			if err != nil {
 				logger.Debugf("git clone output: %s", output)
@@ -100,8 +102,8 @@ func CloneOrUpdateRepo(repoOwner, repoName, authURL string, config config.Config
 	} else {
 		logger.Info("Updating repo: ", repoFullName)
 
-		err := retryOperation(config, func() error {
-			command := getGitFetchCommand(config.CloneType, repoPath, authURL)
+		err := retryOperation(ctx, config, func(attemptCtx context.Context) error {
+			command := getGitFetchCommand(attemptCtx, config.CloneType, repoPath, authURL)
 			output, err := command.CombinedOutput()
 			if err != nil {
 				logger.Debugf("git fetch output: %s", output)
@@ -120,15 +122,15 @@ func CloneOrUpdateRepo(repoOwner, repoName, authURL string, config config.Config
 	}
 }
 
-func CloneOrUpdateRawRepo(repoOwner, repoName, repoURL string, config config.Config) {
+func CloneOrUpdateRawRepo(ctx context.Context, repoOwner, repoName, repoURL string, config config.Config) {
 	repoPath := filepath.Join(getBaseDirectoryPath(repoOwner, repoName, config), repoName+".git")
 	repoLabel := fmt.Sprintf("%s/%s", repoOwner, repoName)
 
 	if _, err := os.Stat(repoPath); os.IsNotExist(err) {
 		logger.Infof("Cloning raw repo: %s", repoLabel)
 
-		err := retryOperation(config, func() error {
-			command := getGitCloneCommand(config.CloneType, repoPath, repoURL)
+		err := retryOperation(ctx, config, func(attemptCtx context.Context) error {
+			command := getGitCloneCommand(attemptCtx, config.CloneType, repoPath, repoURL)
 			output, err := command.CombinedOutput()
 			if err != nil {
 				logger.Debugf("git clone output: %s", output)
@@ -147,8 +149,8 @@ func CloneOrUpdateRawRepo(repoOwner, repoName, repoURL string, config config.Con
 	} else {
 		logger.Infof("Updating raw repo: %s", repoLabel)
 
-		err := retryOperation(config, func() error {
-			command := getGitFetchCommand(config.CloneType, repoPath, repoURL)
+		err := retryOperation(ctx, config, func(attemptCtx context.Context) error {
+			command := getGitFetchCommand(attemptCtx, config.CloneType, repoPath, repoURL)
 			output, err := command.CombinedOutput()
 			if err != nil {
 				logger.Debugf("git fetch output: %s", output)
@@ -169,7 +171,7 @@ func CloneOrUpdateRawRepo(repoOwner, repoName, repoURL string, config config.Con
 
 // SyncWiki clones or updates a repository's wiki.
 // wikiURL must be a fully-formed authenticated URL; use BuildAuthURL to construct it.
-func SyncWiki(repoOwner, repoName, wikiURL string, config config.Config) {
+func SyncWiki(ctx context.Context, repoOwner, repoName, wikiURL string, config config.Config) {
 	repoFullName := fmt.Sprintf("%s/%s", repoOwner, repoName)
 	repoWikiPath := filepath.Join(getBaseDirectoryPath(repoOwner, repoName, config), repoName+".wiki.git")
 
@@ -177,8 +179,8 @@ func SyncWiki(repoOwner, repoName, wikiURL string, config config.Config) {
 		logger.Info("Cloning wiki: ", repoFullName)
 		wikiNotFound := false
 
-		err := retryOperation(config, func() error {
-			command := exec.Command("git", "clone", wikiURL, repoWikiPath)
+		err := retryOperation(ctx, config, func(attemptCtx context.Context) error {
+			command := newGitCommand(attemptCtx, "clone", wikiURL, repoWikiPath)
 			output, err := command.CombinedOutput()
 			if err != nil {
 				logger.Debugf("git clone wiki output: %s", output)
@@ -206,8 +208,8 @@ func SyncWiki(repoOwner, repoName, wikiURL string, config config.Config) {
 	} else {
 		logger.Info("Updating wiki: ", repoFullName)
 
-		err := retryOperation(config, func() error {
-			command := exec.Command("git", "-C", repoWikiPath, "pull", "--prune", "origin")
+		err := retryOperation(ctx, config, func(attemptCtx context.Context) error {
+			command := newGitCommand(attemptCtx, "-C", repoWikiPath, "pull", "--prune", "origin")
 			output, err := command.CombinedOutput()
 			if err != nil {
 				logger.Debugf("git pull wiki output: %s", output)
@@ -226,11 +228,11 @@ func SyncWiki(repoOwner, repoName, wikiURL string, config config.Config) {
 	}
 }
 
-func SyncIssues(repoOwner, repoName string, allIssues []issues.Issue, cfg config.Config) {
+func SyncIssues(ctx context.Context, repoOwner, repoName string, allIssues []issues.Issue, cfg config.Config) {
 	repoFullName := fmt.Sprintf("%s/%s", repoOwner, repoName)
 	logger.Info("Syncing issues for: ", repoFullName)
 
-	err := retryOperation(cfg, func() error {
+	err := retryOperation(ctx, cfg, func(context.Context) error {
 		return issues.WriteIssues(cfg.BackupDir, repoOwner, repoName, allIssues)
 	}, fmt.Sprintf("sync issues %s", repoFullName))
 

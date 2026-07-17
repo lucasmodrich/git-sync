@@ -31,14 +31,14 @@ func (c RawClient) extractRepoInfo(url string) (string, string) {
 	return parts[len(parts)-2], parts[len(parts)-1]
 }
 
-func (c RawClient) Sync(_ context.Context, cfg config.Config) error {
+func (c RawClient) Sync(ctx context.Context, cfg config.Config) error {
 	if len(cfg.RawGitURLs) == 0 {
 		return nil
 	}
 
 	gitSync.LogRepoCount(len(cfg.RawGitURLs), "raw")
 
-	gitSync.SyncWithConcurrency(cfg, cfg.RawGitURLs, func(repoURL string) {
+	gitSync.SyncWithConcurrency(ctx, cfg, cfg.RawGitURLs, func(repoURL string) {
 		owner, name := c.extractRepoInfo(repoURL)
 
 		if cfg.DryRun {
@@ -52,7 +52,7 @@ func (c RawClient) Sync(_ context.Context, cfg config.Config) error {
 			return
 		}
 
-		gitSync.CloneOrUpdateRawRepo(owner, name, repoURL, cfg)
+		gitSync.CloneOrUpdateRawRepo(ctx, owner, name, repoURL, cfg)
 	})
 
 	gitSync.LogSyncSummary(&cfg)

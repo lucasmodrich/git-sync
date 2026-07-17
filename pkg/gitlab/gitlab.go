@@ -48,7 +48,7 @@ func (c *GitlabClient) Sync(ctx context.Context, cfg config.Config) error {
 
 	gitSync.LogRepoCount(len(projects), cfg.Platform)
 
-	gitSync.SyncWithConcurrency(cfg, projects, func(project *gl.Project) {
+	gitSync.SyncWithConcurrency(ctx, cfg, projects, func(project *gl.Project) {
 		ns := project.Namespace.FullPath
 		name := project.Path
 
@@ -72,11 +72,11 @@ func (c *GitlabClient) Sync(ctx context.Context, cfg config.Config) error {
 		}
 
 		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+ns+"/"+name+".git", cfg.Username, c.tokenManager.GetNextToken())
-		gitSync.CloneOrUpdateRepo(ns, name, repoAuthURL, cfg)
+		gitSync.CloneOrUpdateRepo(ctx, ns, name, repoAuthURL, cfg)
 
 		if cfg.IncludeWiki && project.WikiEnabled {
 			wikiAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+ns+"/"+name+".wiki.git", cfg.Username, c.tokenManager.GetNextToken())
-			gitSync.SyncWiki(ns, name, wikiAuthURL, cfg)
+			gitSync.SyncWiki(ctx, ns, name, wikiAuthURL, cfg)
 		}
 		if cfg.IncludeIssues && project.IssuesEnabled {
 			since, hasPrevSync := issues.ReadLastSyncTime(cfg.BackupDir, project.Namespace.FullPath, project.Path)
@@ -84,7 +84,7 @@ func (c *GitlabClient) Sync(ctx context.Context, cfg config.Config) error {
 			if err != nil {
 				logger.Errorf("Failed to fetch issues for %s/%s: %v", project.Namespace.FullPath, project.Path, err)
 			} else {
-				gitSync.SyncIssues(project.Namespace.FullPath, project.Path, allIssues, cfg)
+				gitSync.SyncIssues(ctx, project.Namespace.FullPath, project.Path, allIssues, cfg)
 			}
 		}
 	})

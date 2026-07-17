@@ -25,6 +25,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -40,6 +41,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -55,6 +57,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -70,6 +73,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -89,6 +93,28 @@ func TestSetSensibleDefaults(t *testing.T) {
 				},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
+			},
+		},
+		{
+			name: "Default timeout when not set",
+			cfg: Config{
+				Platform: "github",
+				Server: Server{
+					Domain:   "github.com",
+					Protocol: "https",
+				},
+				Concurrency: 5,
+			},
+			expected: Config{
+				Platform: "github",
+				Server: Server{
+					Domain:   "github.com",
+					Protocol: "https",
+				},
+				CloneType:   "bare",
+				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -109,6 +135,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -121,6 +148,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				Tokens:      []string{"single-token", "token1", "token2"},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -132,6 +160,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				Tokens:      []string{"single-token"},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -147,6 +176,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				},
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     1800,
 			},
 		},
 		{
@@ -155,6 +185,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				Platform:    "github",
 				CloneType:   "mirror",
 				Concurrency: 10,
+				Timeout:     600,
 				Server: Server{
 					Domain:   "custom.github.com",
 					Protocol: "ssh",
@@ -164,6 +195,7 @@ func TestSetSensibleDefaults(t *testing.T) {
 				Platform:    "github",
 				CloneType:   "mirror",
 				Concurrency: 10,
+				Timeout:     600,
 				Server: Server{
 					Domain:   "custom.github.com",
 					Protocol: "ssh",
@@ -189,6 +221,9 @@ func TestSetSensibleDefaults(t *testing.T) {
 			}
 			if cfg.Concurrency != tt.expected.Concurrency {
 				t.Errorf("Concurrency = %v, want %v", cfg.Concurrency, tt.expected.Concurrency)
+			}
+			if cfg.Timeout != tt.expected.Timeout {
+				t.Errorf("Timeout = %v, want %v", cfg.Timeout, tt.expected.Timeout)
 			}
 			if cfg.Token != "" {
 				t.Error("Token should be cleared after conversion")

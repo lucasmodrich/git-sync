@@ -124,9 +124,8 @@ var rootCmd = &cobra.Command{
 			logger.Infof("Found %d raw git URLs to sync", len(cfg.RawGitURLs))
 		}
 
-		// rootCtx is cancelled when a shutdown signal is received; API calls respect it.
-		// Note: git subprocess cancellation is not implemented — running git operations
-		// complete normally after shutdown is signalled.
+		// rootCtx is cancelled when a shutdown signal is received; both API calls and
+		// git subprocesses (via pkg/sync's per-attempt timeout and cancellation) respect it.
 		rootCtx, cancelRoot := context.WithCancel(context.Background())
 		defer cancelRoot()
 

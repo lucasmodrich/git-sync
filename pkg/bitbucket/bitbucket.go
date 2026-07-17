@@ -33,7 +33,7 @@ func (c *BitbucketClient) createClient() *bb.Client {
 	return bb.NewBasicAuth(c.username, c.tokenManager.GetNextToken())
 }
 
-func (c *BitbucketClient) Sync(_ context.Context, cfg config.Config) error {
+func (c *BitbucketClient) Sync(ctx context.Context, cfg config.Config) error {
 	repos, err := c.getRepos(cfg)
 	if err != nil {
 		return err
@@ -41,7 +41,7 @@ func (c *BitbucketClient) Sync(_ context.Context, cfg config.Config) error {
 
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
-	gitSync.SyncWithConcurrency(cfg, repos, func(repo *bb.Repository) {
+	gitSync.SyncWithConcurrency(ctx, cfg, repos, func(repo *bb.Repository) {
 		owner := cfg.Workspace
 		name := repo.Name
 
@@ -61,12 +61,12 @@ func (c *BitbucketClient) Sync(_ context.Context, cfg config.Config) error {
 		}
 
 		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+name+".git", cfg.Username, c.tokenManager.GetNextToken())
-		gitSync.CloneOrUpdateRepo(owner, name, repoAuthURL, cfg)
+		gitSync.CloneOrUpdateRepo(ctx, owner, name, repoAuthURL, cfg)
 
 		if cfg.IncludeWiki && repo.Has_wiki {
 			// Bitbucket wiki URL pattern: https://support.atlassian.com/bitbucket-cloud/docs/clone-a-wiki/
 			wikiAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+name+".git/wiki", cfg.Username, c.tokenManager.GetNextToken())
-			gitSync.SyncWiki(owner, name, wikiAuthURL, cfg)
+			gitSync.SyncWiki(ctx, owner, name, wikiAuthURL, cfg)
 		}
 	})
 

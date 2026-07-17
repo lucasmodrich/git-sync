@@ -42,6 +42,13 @@ func SetSensibleDefaults(cfg *Config) {
 		cfg.Concurrency = 5
 	}
 
+	// If timeout is not set, default to 30 minutes per git operation attempt.
+	// This bounds a stalled clone/fetch (dead connection, unresponsive remote) so it
+	// cannot block a worker slot indefinitely.
+	if cfg.Timeout == 0 {
+		cfg.Timeout = 1800
+	}
+
 	// If no clone_type is not set in the config file, set it to bare
 	if cfg.CloneType == "" {
 		logger.Warn("Clone type is required but not set. Add the 'clone_type' field to the config file as mentioned in the docs: https://github.com/lucasmodrich/git-sync/wiki/Configuration. Setting it to 'bare'.")

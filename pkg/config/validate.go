@@ -52,6 +52,11 @@ func ValidateConfig(cfg Config) error {
 		return fmt.Errorf("concurrency must be between 1 and 20")
 	}
 
+	// Validate timeout
+	if cfg.Timeout < 1 {
+		return fmt.Errorf("timeout must be a positive number of seconds")
+	}
+
 	// Validate cron if provided
 	if cfg.Cron != "" {
 		_, err := cron.ParseStandard(cfg.Cron)

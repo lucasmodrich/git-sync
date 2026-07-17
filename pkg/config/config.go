@@ -66,6 +66,7 @@ type Config struct {
 	CloneType     string             `mapstructure:"clone_type"`
 	RawGitURLs    []string           `mapstructure:"raw_git_urls"`
 	Concurrency   int                `mapstructure:"concurrency"`
+	Timeout       int                `mapstructure:"timeout"` // per-attempt git operation timeout, in seconds
 	Retry         RetryConfig        `mapstructure:"retry"`
 	Notification  NotificationConfig `mapstructure:"notification"`
 	Telemetry     TelemetryConfig    `mapstructure:"telemetry"`
@@ -175,6 +176,7 @@ func SaveConfig(config Config, cfgFile string) error {
 	viper.Set("clone_type", config.CloneType)
 	viper.Set("raw_git_urls", config.RawGitURLs)
 	viper.Set("concurrency", config.Concurrency)
+	viper.Set("timeout", config.Timeout)
 	viper.Set("retry", config.Retry)
 	viper.Set("notification", config.Notification)
 	viper.Set("telemetry", config.Telemetry)
@@ -204,6 +206,7 @@ func GetInitialConfig() Config {
 		CloneType:     "bare",
 		RawGitURLs:    []string{},
 		Concurrency:   5,
+		Timeout:       1800,
 		Retry: RetryConfig{
 			Count: 3,
 			Delay: 5,

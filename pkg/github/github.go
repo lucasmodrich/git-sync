@@ -49,7 +49,7 @@ func (c *GitHubClient) Sync(ctx context.Context, cfg config.Config) error {
 
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
-	gitSync.SyncWithConcurrency(cfg, repos, func(repo *gh.Repository) {
+	gitSync.SyncWithConcurrency(ctx, cfg, repos, func(repo *gh.Repository) {
 		owner := repo.GetOwner().GetLogin()
 		repoName := repo.GetName()
 
@@ -73,11 +73,11 @@ func (c *GitHubClient) Sync(ctx context.Context, cfg config.Config) error {
 		}
 
 		repoAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+repoName+".git", cfg.Username, c.tokenManager.GetNextToken())
-		gitSync.CloneOrUpdateRepo(owner, repoName, repoAuthURL, cfg)
+		gitSync.CloneOrUpdateRepo(ctx, owner, repoName, repoAuthURL, cfg)
 
 		if cfg.IncludeWiki && repo.GetHasWiki() {
 			wikiAuthURL, _ := gitSync.BuildAuthURL(cfg.Server.Protocol, cfg.Server.Domain, "/"+owner+"/"+repoName+".wiki.git", cfg.Username, c.tokenManager.GetNextToken())
-			gitSync.SyncWiki(owner, repoName, wikiAuthURL, cfg)
+			gitSync.SyncWiki(ctx, owner, repoName, wikiAuthURL, cfg)
 		}
 		if cfg.IncludeIssues && repo.GetHasIssues() {
 			since, hasPrevSync := issues.ReadLastSyncTime(cfg.BackupDir, owner, repoName)
@@ -85,7 +85,7 @@ func (c *GitHubClient) Sync(ctx context.Context, cfg config.Config) error {
 			if err != nil {
 				logger.Errorf("Failed to fetch issues for %s/%s: %v", owner, repoName, err)
 			} else {
-				gitSync.SyncIssues(owner, repoName, allIssues, cfg)
+				gitSync.SyncIssues(ctx, owner, repoName, allIssues, cfg)
 			}
 		}
 	})

@@ -101,7 +101,7 @@ func buildRepoAuthURL(rawURL, pat string) (string, error) {
 }
 
 // Sync synchronizes all accessible Azure DevOps repositories for the configured project.
-func (c *MSDevOpsClient) Sync(_ context.Context, cfg config.Config) error {
+func (c *MSDevOpsClient) Sync(ctx context.Context, cfg config.Config) error {
 	repos, err := c.getRepos(cfg)
 	if err != nil {
 		return fmt.Errorf("failed to get repositories: %w", err)
@@ -109,7 +109,7 @@ func (c *MSDevOpsClient) Sync(_ context.Context, cfg config.Config) error {
 
 	gitSync.LogRepoCount(len(repos), cfg.Platform)
 
-	gitSync.SyncWithConcurrency(cfg, repos, func(repo git.GitRepository) {
+	gitSync.SyncWithConcurrency(ctx, cfg, repos, func(repo git.GitRepository) {
 		// Guard: Project is a pointer and may be absent for orphaned repositories.
 		if repo.Project == nil {
 			logger.Warnf("Skipping repository %q — missing project reference", derefString(repo.Name))
@@ -148,7 +148,7 @@ func (c *MSDevOpsClient) Sync(_ context.Context, cfg config.Config) error {
 			return
 		}
 
-		gitSync.CloneOrUpdateRepo(repoOwner, repoName, authURL, cfg)
+		gitSync.CloneOrUpdateRepo(ctx, repoOwner, repoName, authURL, cfg)
 	})
 
 	gitSync.LogSyncSummary(&cfg)

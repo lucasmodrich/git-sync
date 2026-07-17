@@ -27,8 +27,12 @@ WORKDIR /opt/go
 
 LABEL maintainer="Lucas Modrich"
 
-# Install git since it's required for the application
-RUN apk add --no-cache git su-exec
+# Install git since it's required for the application.
+# tini is the container's PID 1 and reaps orphaned/zombie processes — without it,
+# grandchildren git subprocesses spawn (ssh, git-remote-https, pack-objects) that
+# outlive a killed or timed-out git parent would never be reaped, slowly
+# exhausting the container's process table over time.
+RUN apk add --no-cache git su-exec tini
 
 RUN mkdir -p /git-sync /backups
 
@@ -37,5 +41,5 @@ COPY entrypoint.sh /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh", "/opt/go/git-sync"]
+ENTRYPOINT ["/sbin/tini", "--", "/entrypoint.sh", "/opt/go/git-sync"]
 CMD ["--config", "/git-sync/config.yaml", "--backup-dir", "/backups"]

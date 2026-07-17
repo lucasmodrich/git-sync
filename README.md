@@ -50,6 +50,7 @@ tokens:
 username: your-username
 backup_dir: ~/git-backups
 concurrency: 5
+timeout: 1800 # per-attempt git operation timeout, in seconds
 ```
 
 See [CLAUDE.md](./CLAUDE.md) for full architecture and configuration reference.

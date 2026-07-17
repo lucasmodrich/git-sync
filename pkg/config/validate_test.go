@@ -68,6 +68,7 @@ func TestValidateConfig(t *testing.T) {
 				BackupDir:   "test",
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     30,
 				Platform:    "github",
 				Server: Server{
 					Domain:   "test",
@@ -84,6 +85,7 @@ func TestValidateConfig(t *testing.T) {
 				BackupDir:   "test",
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     30,
 				Platform:    "github",
 				Server: Server{
 					Domain:   "test",
@@ -100,6 +102,7 @@ func TestValidateConfig(t *testing.T) {
 				BackupDir:   "test",
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     30,
 				Platform:    "github",
 				Server: Server{
 					Domain:   "test",
@@ -159,11 +162,46 @@ func TestValidateConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "Invalid Timeout - Zero",
+			cfg: Config{
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				Timeout:     0,
+				Platform:    "github",
+				Server: Server{
+					Domain:   "test",
+					Protocol: "https",
+				},
+				Username: "test",
+				Tokens:   []string{"token1"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Invalid Timeout - Negative",
+			cfg: Config{
+				BackupDir:   "test",
+				CloneType:   "bare",
+				Concurrency: 5,
+				Timeout:     -1,
+				Platform:    "github",
+				Server: Server{
+					Domain:   "test",
+					Protocol: "https",
+				},
+				Username: "test",
+				Tokens:   []string{"token1"},
+			},
+			wantErr: true,
+		},
+		{
 			name: "Valid Concurrency - Custom",
 			cfg: Config{
 				BackupDir:   "test",
 				CloneType:   "bare",
 				Concurrency: 10,
+				Timeout:     30,
 				Platform:    "github",
 				Server: Server{
 					Domain:   "test",
@@ -204,6 +242,7 @@ func TestValidateConfig(t *testing.T) {
 				BackupDir:   "test",
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     30,
 				RawGitURLs: []string{
 					"https://github.com/user/repo1.git",
 					"git@github.com:user/repo2.git",
@@ -304,6 +343,7 @@ func TestValidateConfig(t *testing.T) {
 				BackupDir:   "test",
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     30,
 				Platform:    "msdevops",
 				Server: Server{
 					Domain:       "dev.azure.com",
@@ -400,6 +440,7 @@ func TestValidateConfig(t *testing.T) {
 				BackupDir:   "test",
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     30,
 				DryRun:      true,
 				RawGitURLs:  []string{"https://github.com/user/repo.git"},
 			},
@@ -413,6 +454,7 @@ func TestValidateConfig(t *testing.T) {
 				BackupDir:   "test",
 				CloneType:   "bare",
 				Concurrency: 5,
+				Timeout:     30,
 				Server: Server{
 					Domain:   "test",
 					Protocol: "https",
