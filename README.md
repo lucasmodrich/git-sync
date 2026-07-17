@@ -59,6 +59,10 @@ See [CLAUDE.md](./CLAUDE.md) for full architecture and configuration reference.
 
 Open an [issue](https://github.com/lucasmodrich/git-sync/issues/new) on GitHub.
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for notable changes made in this fork.
+
 ## Heritage
 
 This project is a fork of [AkashRajpurohit/git-sync](https://github.com/AkashRajpurohit/git-sync), originally created by [Akash Rajpurohit](https://akashrajpurohit.com/). The original README, feature history, and contributor acknowledgements are preserved in [HERITAGE.md](./HERITAGE.md).
